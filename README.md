@@ -234,7 +234,7 @@ If your repository name is different from `secure.oryxen.tech`, update `.github/
 ```yaml
 - name: Build
   env:
-    VITE_BASE_PATH: /YOUR_REPO_NAME  # Change this line
+    VITE_BASE_PATH: /YOUR_REPO_NAME/  # Must start/end with /
   run: npm run build
 ```
 
@@ -381,7 +381,7 @@ Use helper functions:
 
 ### Build Fails on GitHub Actions
 
-- Check that `VITE_BASE_PATH` matches your repo name
+- Check that `VITE_BASE_PATH` matches your repo name (and ends with `/`)
 - Verify GitHub Actions has write permissions
 
 ### Auth Doesn't Work on GitHub Pages
