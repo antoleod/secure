@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// RECOMMENDED: UID-based storage rules
+// Deploy these rules when you're ready to enable uploads
+service firebase.storage {
+  match /b/{bucket}/o {
+    // User document uploads (KYC, etc.)
+    match /users/{uid}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Payment proofs
+    match /payments/{docId}/{allPaths=**} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null 
+                  && (getUserRole() == 'admin' || getPaymentOwner(docId) == request.auth.uid);
+    }
+    
+    // Collateral images
+    match /collaterals/{docId}/{allPaths=**} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null 
+                  && (getUserRole() == 'admin' || getCollateralOwner(docId) == request.auth.uid);
+    }
+    
+    // Helper functions
+    function getUserRole() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    function getPaymentOwner(docId) {
+      return firestore.get(/databases/(default)/documents/payments/$(docId)).data.customerUid;
+    }
+    
+    function getCollateralOwner(docId) {
+      return firestore.get(/databases/(default)/documents/collaterals/$(docId)).data.ownerUid;
+    }
+  }
+}
