@@ -22,7 +22,6 @@ export interface UserData {
 
 export interface AuthContextType {
   user: User | null;
-  currentUser: User | null;
   userData: UserData | null;
   loading: boolean;
   error: string | null;
@@ -31,7 +30,6 @@ export interface AuthContextType {
   signInGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
-  logout: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -52,6 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Si Firebase no se inicializó, no hacer nada y mostrar error.
+    if (!auth || !db) {
+      setError('La configuración de Firebase es inválida. Revisa las variables de entorno.');
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
@@ -147,18 +152,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = () => {
+  const signOut = async () => {
+    if (!auth) return;
     return firebaseSignOut(auth);
   };
-
-  // Legacy alias for components still consuming the older API
-  const logout = () => signOut();
 
   const clearError = () => setError(null);
 
   const value = {
     user,
-    currentUser: user,
     userData,
     loading,
     error,
@@ -167,7 +169,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInGoogle,
     resetPassword,
     signOut,
-    logout,
     clearError,
   };
 
