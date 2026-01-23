@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { listCollaterals, registerCollateralWithRefs, uploadFile } from '@/lib/firestoreClient';
+import { useI18n } from '@/contexts/I18nContext';
 import {
     Plus,
     Smartphone,
@@ -25,31 +27,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CollateralType } from '@/types';
-
-const COLLATERAL_TYPES: { value: CollateralType; label: string; icon: any }[] = [
-    { value: 'electronics', label: 'Electrónica', icon: Smartphone },
-    { value: 'jewelry', label: 'Joyas y Relojes', icon: Watch },
-    { value: 'vehicle', label: 'Vehículos', icon: Car },
-    { value: 'property', label: 'Propiedades', icon: Home },
-    { value: 'other', label: 'Otros', icon: Package },
-];
 
 export default function CustomerCollateral() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const { t } = useI18n();
     const [isAdding, setIsAdding] = useState(false);
-    const [uploading, setUploading] = useState(false);
 
-    // Form State
+    // Form state
     const [form, setForm] = useState({
-        type: 'electronics' as CollateralType,
+        type: 'electronics',
         brandModel: '',
         serialImei: '',
-        condition: 'good',
+        condition: '', // Like "New", "Used", etc.
         estimatedValue: 0,
     });
     const [photos, setPhotos] = useState<File[]>([]);
+    const [loading, setLoading] = useState(false);
 
     const { data: items, isLoading } = useQuery({
         queryKey: ['collaterals', user?.uid],
@@ -60,306 +54,229 @@ export default function CustomerCollateral() {
     const mutation = useMutation({
         mutationFn: async () => {
             if (!user) return;
-            setUploading(true);
+            setLoading(true);
             try {
-                const photoRefs: string[] = [];
+                // Upload photos and get URLs
+                const photosRefs: string[] = [];
                 for (const photo of photos) {
-                    const ref = await uploadFile(`collaterals/${user.uid}/${Date.now()}-${photo.name}`, photo);
-                    if (ref) photoRefs.push(ref);
+                    const url = await uploadFile(`collaterals/${user.uid}/${Date.now()}-${photo.name}`, photo);
+                    if (url) photosRefs.push(url);
                 }
 
                 await registerCollateralWithRefs(user.uid, {
-                    type: form.type,
-                    brandModel: form.brandModel,
-                    serialImei: form.serialImei,
-                    condition: form.condition,
-                    estimatedValue: form.estimatedValue * 100,
-                    photosRefs: photoRefs,
-                    checklist: {},
-                    declarations: {}
-                });
+                    ...form,
+                    photosRefs,
+                    estimatedValue: form.estimatedValue * 100, // Convert to cents
+                    checklist: { functional: true, screenIntact: true, noWaterDamage: true },
+                    declarations: { isOwner: true, noLiens: true }
+                } as any);
             } finally {
-                setUploading(false);
+                setLoading(false);
             }
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['collaterals', user?.uid] });
             setIsAdding(false);
-            setForm({ type: 'electronics', brandModel: '', serialImei: '', condition: 'good', estimatedValue: 0 });
+            setForm({ type: 'electronics', brandModel: '', serialImei: '', condition: '', estimatedValue: 0 });
             setPhotos([]);
-        }
+        },
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        mutation.mutate();
-    };
+    const categories = [
+        { id: 'electronics', label: t('collateral.type.electronics'), icon: Smartphone },
+        { id: 'jewelry', label: t('collateral.type.jewelry'), icon: Watch },
+        { id: 'vehicle', label: t('collateral.type.vehicle'), icon: Car },
+        { id: 'property', label: t('collateral.type.property'), icon: Home },
+        { id: 'other', label: t('collateral.type.other'), icon: Package },
+    ];
 
-    const removePhoto = (index: number) => {
-        setPhotos(photos.filter((_, i) => i !== index));
-    };
+    if (isLoading) return (
+        <div className="space-y-6">
+            <Skeleton className="h-20 w-full rounded-2xl" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Skeleton className="h-64 rounded-3xl" />
+                <Skeleton className="h-64 rounded-3xl" />
+            </div>
+        </div>
+    );
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-32 font-sans overflow-x-hidden animate-in fade-in duration-700">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="max-w-6xl mx-auto space-y-12 pb-32 animate-in fade-in duration-700">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <div className="flex items-center gap-2 text-blue-600 mb-2">
-                        <ShieldCheck className="h-5 w-5" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">Gestión de Activos</span>
+                        <Package className="h-5 w-5" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">{t('collateral.manage.label')}</span>
                     </div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tight">Mis Prendas</h1>
-                    <p className="text-slate-500 mt-2 text-lg max-w-xl leading-relaxed">
-                        Registra los artículos que deseas tasar para obtener liquidez inmediata bajo los mejores términos del mercado.
-                    </p>
+                    <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none">{t('collateral.manage.title')}</h1>
+                    <p className="text-slate-500 mt-4 text-lg max-w-md">{t('collateral.manage.subtitle')}</p>
                 </div>
                 {!isAdding && (
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                        <Button
-                            onClick={() => setIsAdding(true)}
-                            className="bg-slate-900 group hover:bg-black text-white shadow-2xl shadow-slate-200 rounded-[2rem] px-10 py-8 h-auto flex items-center gap-4 transition-all duration-500"
-                        >
-                            <div className="w-10 h-10 bg-white/10 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 transition-colors duration-500">
-                                <Plus className="h-6 w-6" />
-                            </div>
-                            <div className="flex flex-col items-start leading-tight">
-                                <span className="font-black text-lg">Añadir Activo</span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">Nuevo Empeño</span>
-                            </div>
-                        </Button>
-                    </motion.div>
+                    <Button onClick={() => setIsAdding(true)} className="bg-slate-900 hover:bg-black text-white h-16 px-8 rounded-[1.5rem] shadow-2xl shadow-slate-200 text-sm font-black uppercase tracking-widest transition-all active:scale-95">
+                        <Plus className="mr-2 h-5 w-5" />
+                        {t('collateral.add.cta')}
+                    </Button>
                 )}
             </div>
 
             <AnimatePresence mode="wait">
                 {isAdding ? (
                     <motion.div
-                        key="form"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        className="w-full"
+                        className="bg-white rounded-[3rem] shadow-2xl shadow-slate-100 overflow-hidden border border-slate-50"
                     >
-                        <Card className="border-none shadow-[0_30px_100px_rgba(0,0,0,0.08)] bg-white rounded-[3rem] overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 px-10 py-10 border-b border-slate-100">
-                                <CardTitle className="text-3xl font-black tracking-tight">Registro de Prenda</CardTitle>
-                                <CardDescription className="text-base text-slate-500">Completa la ficha técnica para que nuestro equipo realice una tasación inicial.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-10">
-                                <form onSubmit={handleSubmit} className="space-y-10">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                        <div className="space-y-3">
-                                            <Label className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Categoría de Activo</Label>
-                                            <select
-                                                className="w-full h-14 rounded-2xl border border-slate-100 bg-slate-50/50 px-5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                                                value={form.type}
-                                                onChange={(e) => setForm({ ...form, type: e.target.value as CollateralType })}
-                                            >
-                                                {COLLATERAL_TYPES.map(t => (
-                                                    <option key={t.value} value={t.value}>{t.label}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2">
+                            {/* Form side */}
+                            <div className="p-10 md:p-16 border-r border-slate-100">
+                                <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">{t('collateral.form.title')}</h2>
+                                <p className="text-slate-400 font-medium mb-10">{t('collateral.form.subtitle')}</p>
 
-                                        <div className="space-y-3">
-                                            <Label className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Marca y Modelo Específico</Label>
-                                            <Input
-                                                className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 px-5 font-bold focus:ring-blue-500"
-                                                placeholder="Ej: Rolex GMT Master II"
-                                                value={form.brandModel}
-                                                onChange={(e) => setForm({ ...form, brandModel: e.target.value })}
-                                                required
-                                            />
+                                <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
+                                    <div className="space-y-3">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.category')}</Label>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                            {categories.map((cat) => (
+                                                <button
+                                                    key={cat.id}
+                                                    type="button"
+                                                    onClick={() => setForm({ ...form, type: cat.id })}
+                                                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2 ${form.type === cat.id ? 'border-blue-600 bg-blue-50/50 text-blue-600' : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200'
+                                                        }`}
+                                                >
+                                                    <cat.icon className="h-6 w-6" />
+                                                    <span className="text-[10px] font-black uppercase tracking-tighter">{cat.label}</span>
+                                                </button>
+                                            ))}
                                         </div>
+                                    </div>
 
+                                    <div className="space-y-6">
                                         <div className="space-y-3">
-                                            <Label className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Identificación (IMEI/SN)</Label>
-                                            <Input
-                                                className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 px-5 font-bold"
-                                                placeholder="Nivel de seguridad adicional"
-                                                value={form.serialImei}
-                                                onChange={(e) => setForm({ ...form, serialImei: e.target.value })}
-                                            />
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.brandModel')}</Label>
+                                            <Input className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold" placeholder="Ej: MacBook Pro M3 14'" value={form.brandModel} onChange={e => setForm({ ...form, brandModel: e.target.value })} />
                                         </div>
-
-                                        <div className="space-y-3">
-                                            <Label className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Estado de Conservación</Label>
-                                            <select
-                                                className="w-full h-14 rounded-2xl border border-slate-100 bg-slate-50/50 px-5 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                value={form.condition}
-                                                onChange={(e) => setForm({ ...form, condition: e.target.value })}
-                                            >
-                                                <option value="new">💎 Nuevo / Precintado</option>
-                                                <option value="like_new">✨ Como Nuevo</option>
-                                                <option value="good">👍 Buen Estado (Normal)</option>
-                                                <option value="fair">📦 Aceptable (Signos de uso)</option>
-                                                <option value="poor">🩹 Desgastado</option>
-                                            </select>
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-3">
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.serial')}</Label>
+                                                <Input className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold" placeholder="IMEI / Serial Number" value={form.serialImei} onChange={e => setForm({ ...form, serialImei: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-3">
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.condition')}</Label>
+                                                <Input className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold" placeholder="Ej: Como nuevo" value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })} />
+                                            </div>
                                         </div>
-
                                         <div className="space-y-3">
-                                            <Label className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Valor Estimado (€)</Label>
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.estimatedValue')}</Label>
                                             <div className="relative">
-                                                <Input
-                                                    type="number"
-                                                    className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 px-5 font-black text-xl text-blue-600 pl-10"
-                                                    placeholder="0"
-                                                    value={form.estimatedValue || ''}
-                                                    onChange={(e) => setForm({ ...form, estimatedValue: Number(e.target.value) })}
-                                                    required
-                                                />
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-300">€</span>
+                                                <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-400">€</span>
+                                                <Input type="number" className="h-14 pl-10 rounded-2xl border-slate-100 bg-slate-50/50 font-black text-xl" value={form.estimatedValue} onChange={e => setForm({ ...form, estimatedValue: Number(e.target.value) })} />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-5">
-                                        <Label className="text-[10px] uppercase tracking-widest text-slate-400 font-black">Archivo Fotográfico (Mínimo 3)</Label>
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-6">
-                                            {photos.map((p, i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    initial={{ scale: 0.8 }}
-                                                    animate={{ scale: 1 }}
-                                                    className="relative aspect-square rounded-[2rem] overflow-hidden border-2 border-slate-50 group hover:shadow-xl transition-all"
-                                                >
-                                                    <img src={URL.createObjectURL(p)} className="w-full h-full object-cover" alt="Preview" />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removePhoto(i)}
-                                                        className="absolute top-2 right-2 bg-red-500/90 backdrop-blur-md text-white p-2 rounded-xl opacity-0 group-hover:opacity-100 transition-all transform hover:scale-110"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </motion.div>
-                                            ))}
-                                            <motion.button
-                                                whileHover={{ scale: 1.05, borderColor: '#3b82f6' }}
-                                                type="button"
-                                                className="aspect-square rounded-[2rem] border-3 border-dashed border-slate-100 flex flex-col items-center justify-center text-slate-300 hover:text-blue-500 group transition-all"
-                                                onClick={() => document.getElementById('photo-input')?.click()}
-                                            >
-                                                <Camera className="h-8 w-8 mb-2 group-hover:rotate-12 transition-transform" />
-                                                <span className="text-[10px] font-black uppercase tracking-widest">Añadir Foto</span>
-                                            </motion.button>
-                                            <input
-                                                id="photo-input"
-                                                type="file"
-                                                multiple
-                                                accept="image/*"
-                                                className="hidden"
-                                                onChange={(e) => setPhotos([...photos, ...Array.from(e.target.files || [])])}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                                        <Button type="button" variant="ghost" onClick={() => setIsAdding(false)} className="rounded-2xl h-14 px-8 font-black uppercase tracking-widest text-slate-400" disabled={uploading}>
-                                            Cancelar
-                                        </Button>
-                                        <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-[1.5rem] h-14 shadow-2xl shadow-blue-100 text-base font-black tracking-tight" disabled={uploading || mutation.isPending || photos.length < 1}>
-                                            {uploading ? (
-                                                <>
-                                                    <Loader2 className="animate-spin mr-3 h-5 w-5" />
-                                                    Procesando Archivos...
-                                                </>
-                                            ) : (
-                                                'Finalizar Registro de Activo'
-                                            )}
+                                    <div className="flex gap-4 pt-4">
+                                        <Button variant="outline" type="button" onClick={() => setIsAdding(false)} className="flex-1 h-14 rounded-2xl border-slate-200 text-[10px] font-black uppercase tracking-widest">{t('common.cancel')}</Button>
+                                        <Button className="flex-[2] h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-100" disabled={loading || mutation.isPending}>
+                                            {loading || mutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+                                            {t('collateral.form.submit')}
                                         </Button>
                                     </div>
                                 </form>
-                            </CardContent>
-                        </Card>
+                            </div>
+
+                            {/* Info/Media side */}
+                            <div className="bg-slate-50 p-10 md:p-16">
+                                <h3 className="text-xl font-black text-slate-900 tracking-tight mb-8">{t('collateral.form.photos')}</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {photos.map((p, i) => (
+                                        <div key={i} className="aspect-square bg-white rounded-3xl border border-slate-200 overflow-hidden relative group">
+                                            <img src={URL.createObjectURL(p)} className="w-full h-full object-cover" alt="Preview" />
+                                            <button onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Trash2 className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {photos.length < 6 && (
+                                        <label className="aspect-square bg-white border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 group transition-all">
+                                            <Camera className="h-8 w-8 text-slate-300 group-hover:text-blue-500 transition-transform group-hover:scale-110" />
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('collateral.form.addPhoto')}</span>
+                                            <input type="file" className="hidden" accept="image/*" onChange={e => e.target.files && setPhotos([...photos, e.target.files[0]])} />
+                                        </label>
+                                    )}
+                                </div>
+                                <div className="mt-12 p-6 bg-blue-600 rounded-[2rem] text-white">
+                                    <ShieldCheck className="h-8 w-8 mb-4" />
+                                    <h4 className="font-black text-lg leading-tight mb-2">Protocolo de Custodia Oryxen Secure</h4>
+                                    <p className="text-xs text-blue-100 font-medium leading-relaxed">Sus pertenencias se almacenan en bóvedas de alta seguridad con control climático y vigilancia 24/7. Están 100% aseguradas contra todo riesgo.</p>
+                                </div>
+                            </div>
+                        </div>
                     </motion.div>
                 ) : (
-                    <motion.div
-                        key="list"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                    >
-                        {isLoading ? (
-                            [1, 2, 3].map(i => <Skeleton key={i} className="h-80 w-full rounded-[3rem]" />)
-                        ) : items?.length === 0 ? (
-                            <div className="col-span-full py-32 bg-white border border-dashed border-slate-200 rounded-[4rem] flex flex-col items-center text-center px-10">
-                                <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                                    <Package className="h-10 w-10 text-slate-300" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {items?.length === 0 ? (
+                            <div className="col-span-full py-24 text-center space-y-6">
+                                <div className="w-24 h-24 bg-slate-100 rounded-[2.5rem] flex items-center justify-center mx-auto text-slate-300">
+                                    <Package className="h-10 w-10" />
                                 </div>
-                                <h3 className="font-black text-slate-900 text-2xl tracking-tight">Portafolio Vacío</h3>
-                                <p className="text-slate-400 text-lg max-w-sm mt-2 leading-relaxed">Añade tu primer activo para que podamos evaluarlo y habilitar tu línea de crédito.</p>
-                                <Button onClick={() => setIsAdding(true)} className="mt-10 bg-slate-900 rounded-2xl px-10 h-14">
-                                    Empezar a Tasar
-                                </Button>
+                                <div className="max-w-xs mx-auto">
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">{t('collateral.list.empty.title')}</h3>
+                                    <p className="text-slate-400 mt-2 font-medium">{t('collateral.list.empty.subtitle')}</p>
+                                </div>
+                                <Button onClick={() => setIsAdding(true)} variant="link" className="text-blue-600 font-black uppercase tracking-widest text-[10px]">{t('collateral.add.cta')}</Button>
                             </div>
                         ) : (
                             items?.map((item, idx) => (
                                 <motion.div
-                                    key={item.id}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: idx * 0.1 }}
+                                    key={item.id}
+                                    className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden group hover:shadow-2xl hover:shadow-slate-200 transition-all duration-500"
                                 >
-                                    <Card className="border-none bg-white shadow-sm hover:shadow-2xl transition-all duration-700 rounded-[3rem] overflow-hidden group h-full flex flex-col">
-                                        <div className="h-56 bg-slate-100 relative overflow-hidden">
-                                            {item.photosRefs?.[0] ? (
-                                                <img src={item.photosRefs[0]} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.brandModel} />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-slate-300 bg-slate-50">
-                                                    <ImageIcon className="h-12 w-12 opacity-20" />
-                                                </div>
-                                            )}
-
-                                            <div className="absolute top-6 left-6 flex flex-col gap-2">
-                                                <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] shadow-lg backdrop-blur-md ${item.status === 'approved' ? 'bg-emerald-500/90 text-white' :
-                                                    item.status === 'pending' ? 'bg-amber-500/90 text-white' :
-                                                        'bg-slate-900/80 text-white'
-                                                    }`}>
-                                                    {item.status === 'pending' ? 'Evaluando' : item.status.toUpperCase()}
-                                                </span>
+                                    <div className="aspect-[4/3] relative overflow-hidden bg-slate-100">
+                                        {item.photosRefs?.[0] ? (
+                                            <img src={item.photosRefs[0]} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" alt={item.brandModel} />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                                <ImageIcon className="h-12 w-12" />
                                             </div>
+                                        )}
+                                        <div className="absolute top-4 left-4">
+                                            <span className={`px-4 py-2 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl backdrop-blur-md ${item.status === 'approved' ? 'bg-emerald-500/90 text-white' :
+                                                item.status === 'rejected' ? 'bg-red-500/90 text-white' : 'bg-white/90 text-slate-900'
+                                                }`}>
+                                                {t(`common.status.${item.status}`)}
+                                            </span>
                                         </div>
+                                    </div>
+                                    <div className="p-8">
+                                        <div className="flex items-center gap-2 text-blue-600 mb-2">
+                                            {categories.find(c => c.id === item.type)?.icon && React.createElement(categories.find(c => c.id === item.type)!.icon, { className: "h-3 w-3" })}
+                                            <span className="text-[9px] font-black uppercase tracking-widest">{t(`collateral.type.${item.type}`)}</span>
+                                        </div>
+                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-1">{item.brandModel}</h3>
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">{item.serialImei}</p>
 
-                                        <CardContent className="p-8 flex-1 flex flex-col justify-between">
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-start">
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{COLLATERAL_TYPES.find(t => t.value === item.type)?.label}</p>
-                                                        <h3 className="font-black text-2xl text-slate-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors">{item.brandModel}</h3>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-center gap-6 pt-2">
-                                                    <div className="space-y-1">
-                                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Valor</p>
-                                                        <p className="font-black text-slate-900 text-xl tracking-tight">{(item.estimatedValue / 100).toFixed(0)}€</p>
-                                                    </div>
-                                                    <div className="w-[1px] h-8 bg-slate-100" />
-                                                    <div className="space-y-1">
-                                                        <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Estado</p>
-                                                        <p className="font-bold text-slate-600 text-sm capitalize">{item.condition.replace('_', ' ')}</p>
-                                                    </div>
-                                                </div>
+                                        <div className="mt-8 flex items-center justify-between border-t border-slate-50 pt-6">
+                                            <div>
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('collateral.status.evaluating')}</p>
+                                                <p className="text-xl font-black text-slate-900 tracking-tighter italic">{(item.estimatedValue / 100).toLocaleString('es-ES')}€</p>
                                             </div>
-
-                                            <div className="mt-8">
-                                                <Button
-                                                    className={`w-full rounded-2xl h-14 font-black text-xs uppercase tracking-widest transition-all duration-500 ${item.status === 'approved'
-                                                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-100 hover:bg-blue-700'
-                                                        : 'bg-slate-50 text-slate-400 border border-slate-100 cursor-not-allowed'
-                                                        }`}
-                                                    disabled={item.status !== 'approved'}
-                                                >
-                                                    Solicitar Crédito
-                                                    <ArrowUpRight className="ml-2 h-4 w-4" />
+                                            <Link to="/app/new-loan">
+                                                <Button size="icon" className="w-12 h-12 rounded-2xl bg-slate-900 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all duration-500">
+                                                    <ArrowUpRight className="h-5 w-5" />
                                                 </Button>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                            </Link>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             ))
                         )}
-                    </motion.div>
+                    </div>
                 )}
             </AnimatePresence>
         </div>

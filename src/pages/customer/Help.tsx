@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { submitSupportTicket } from '@/lib/firestoreClient';
+import { useI18n } from '@/contexts/I18nContext';
 import {
     MessageSquare,
     Mail,
@@ -11,34 +12,17 @@ import {
     HelpCircle,
     ChevronDown,
     MapPin,
-    LifeBuoy
+    LifeBuoy,
+    CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const FAQS = [
-    {
-        q: "¿Cómo registro mi prenda?",
-        a: "Ve a la sección 'Prendas' en tu menú inferior y haz clic en 'Registrar Nueva Prenda'. Necesitarás subir al menos 2 fotos claras del artículo."
-    },
-    {
-        q: "¿Cuánto tiempo tarda la tasación?",
-        a: "Normalmente evaluamos tu artículo en menos de 2 horas hábiles. Recibirás una notificación en tu panel cuando esté aprobado."
-    },
-    {
-        q: "¿Cómo realizo los pagos?",
-        a: "Puedes pagar mediante transferencia bancaria o en efectivo en nuestras oficinas. Una vez realizado, sube el comprobante en la sección 'Préstamos'."
-    },
-    {
-        q: "¿Qué pasa si no puedo pagar a tiempo?",
-        a: "Siempre puedes solicitar la 'Entrega de Prenda' para saldar la deuda sin que afecte a tu historial, o contactarnos para una prórroga."
-    }
-];
-
 export default function CustomerHelp() {
     const { user, userData } = useAuth();
+    const { t } = useI18n();
     const [submitting, setSubmitting] = useState(false);
     const [sent, setSent] = useState(false);
     const [form, setForm] = useState({
@@ -46,6 +30,25 @@ export default function CustomerHelp() {
         category: 'general',
         message: ''
     });
+
+    const FAQS = [
+        {
+            q: t('help.faq.eligibility.q'),
+            a: t('help.faq.eligibility.a')
+        },
+        {
+            q: "Tasación y Tiempos",
+            a: "Normalmente evaluamos tu artículo en menos de 2 horas hábiles. Recibirás una notificación en tu panel cuando esté aprobado."
+        },
+        {
+            q: t('help.faq.payments.q'),
+            a: t('help.faq.payments.a')
+        },
+        {
+            q: t('help.faq.uploads.q'),
+            a: t('help.faq.uploads.a')
+        }
+    ];
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,7 +60,6 @@ export default function CustomerHelp() {
             setForm({ subject: '', category: 'general', message: '' });
         } catch (error) {
             console.error("Error sending ticket:", error);
-            alert("No se pudo enviar el mensaje. Revisa tu conexión.");
         } finally {
             setSubmitting(false);
         }
@@ -69,11 +71,11 @@ export default function CustomerHelp() {
             <div className="text-center space-y-4">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-full text-blue-600 text-[10px] font-black uppercase tracking-[0.2em] mb-2">
                     <LifeBuoy className="h-4 w-4" />
-                    Centro de Soporte
+                    {t('support.label')}
                 </div>
-                <h1 className="text-5xl font-black text-slate-900 tracking-tight">Estamos para ayudarte</h1>
+                <h1 className="text-5xl font-black text-slate-900 tracking-tight">{t('support.title')}</h1>
                 <p className="text-slate-500 max-w-2xl mx-auto text-lg leading-relaxed">
-                    Resuelve tus dudas en segundos o contacta directamente con nuestro equipo técnico y financiero.
+                    {t('support.subtitle')}
                 </p>
             </div>
 
@@ -86,8 +88,8 @@ export default function CustomerHelp() {
                             <HelpCircle className="w-24 h-24" />
                         </div>
                         <CardHeader className="relative z-10">
-                            <CardTitle className="text-xl font-black">Contacto Directo</CardTitle>
-                            <CardDescription className="text-slate-400">Vías de comunicación rápida.</CardDescription>
+                            <CardTitle className="text-xl font-black">{t('support.contact.title')}</CardTitle>
+                            <CardDescription className="text-slate-400">{t('support.contact.subtitle')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6 relative z-10">
                             <div className="flex items-start gap-4">
@@ -95,7 +97,7 @@ export default function CustomerHelp() {
                                     <Phone className="h-5 w-5 text-blue-400" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Llámanos</p>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('support.contact.call')}</p>
                                     <p className="font-bold text-lg">+32 460 21 02 02</p>
                                 </div>
                             </div>
@@ -104,7 +106,7 @@ export default function CustomerHelp() {
                                     <Mail className="h-5 w-5 text-purple-400" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">E-mail</p>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('support.contact.email')}</p>
                                     <p className="font-bold text-lg">hola@oryxen.tech</p>
                                 </div>
                             </div>
@@ -113,7 +115,7 @@ export default function CustomerHelp() {
                                     <Clock className="h-5 w-5 text-emerald-400" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Horario</p>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('support.contact.hours')}</p>
                                     <p className="font-bold">Lun-Vie: 09:00 - 18:30</p>
                                 </div>
                             </div>
@@ -122,7 +124,7 @@ export default function CustomerHelp() {
                                     <MapPin className="h-5 w-5 text-red-400" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Oficina</p>
+                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('support.contact.office')}</p>
                                     <p className="font-bold">Bruselas, Bélgica</p>
                                 </div>
                             </div>
@@ -131,7 +133,7 @@ export default function CustomerHelp() {
 
                     {/* FAQ Quick View */}
                     <div className="space-y-4">
-                        <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 px-2">Preguntas Frecuentes</h3>
+                        <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 px-2">{t('support.faq.title')}</h3>
                         {FAQS.map((faq, i) => (
                             <details key={i} className="group bg-white border border-slate-100 rounded-2xl overflow-hidden transition-all hover:border-blue-200">
                                 <summary className="flex items-center justify-between p-4 cursor-pointer font-bold text-slate-700 text-sm list-none">
@@ -153,8 +155,8 @@ export default function CustomerHelp() {
                             <div className="flex items-center gap-3">
                                 <MessageSquare className="h-6 w-6 text-blue-600" />
                                 <div>
-                                    <CardTitle className="text-2xl font-black tracking-tight">Enviar Mensaje</CardTitle>
-                                    <CardDescription>Responderemos a tu consulta en menos de 24h.</CardDescription>
+                                    <CardTitle className="text-2xl font-black tracking-tight">{t('support.form.title')}</CardTitle>
+                                    <CardDescription>{t('support.form.subtitle')}</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
@@ -164,21 +166,21 @@ export default function CustomerHelp() {
                                     <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
                                         <CheckCircle2 className="h-10 w-10 text-emerald-600" />
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-900">¡Mensaje Enviado!</h3>
+                                    <h3 className="text-2xl font-black text-slate-900">{t('support.form.success.title')}</h3>
                                     <p className="text-slate-500 mt-2 max-w-xs mx-auto">
-                                        Hemos recibido tu consulta satisfactoriamente. Nuestro equipo te contactará pronto a <strong>{userData?.email}</strong>.
+                                        {t('support.form.success.subtitle', { email: userData?.email || '' })}
                                     </p>
                                     <Button onClick={() => setSent(false)} variant="outline" className="mt-8 rounded-xl px-8">
-                                        Enviar otro mensaje
+                                        {t('support.form.another')}
                                     </Button>
                                 </div>
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Asunto del Mensaje</Label>
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('support.form.subject')}</Label>
                                             <Input
-                                                placeholder="Ej: Duda sobre mi tasación"
+                                                placeholder="Ej: Duda..."
                                                 className="rounded-xl border-slate-200 focus:ring-blue-500 h-12"
                                                 value={form.subject}
                                                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
@@ -186,7 +188,7 @@ export default function CustomerHelp() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Categoría</Label>
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('support.form.category')}</Label>
                                             <select
                                                 className="w-full flex h-12 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 value={form.category}
@@ -202,9 +204,9 @@ export default function CustomerHelp() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Mensaje Detallado</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('support.form.message')}</Label>
                                         <textarea
-                                            placeholder="Cuéntanos con detalle qué necesitas..."
+                                            placeholder="..."
                                             className="w-full min-h-[200px] rounded-2xl border border-slate-200 p-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                                             value={form.message}
                                             onChange={(e) => setForm({ ...form, message: e.target.value })}
@@ -221,19 +223,19 @@ export default function CustomerHelp() {
                                             {submitting ? (
                                                 <>
                                                     <Loader2 className="animate-spin mr-2 h-5 w-5" />
-                                                    Enviando consulta...
+                                                    {t('support.form.sending')}
                                                 </>
                                             ) : (
                                                 <>
                                                     <Send className="mr-2 h-5 w-5" />
-                                                    Enviar Mensaje de Soporte
+                                                    {t('support.form.submit')}
                                                 </>
                                             )}
                                         </Button>
                                     </div>
 
                                     <p className="text-center text-[10px] text-slate-400 font-medium">
-                                        Al enviar este formulario, aceptas que nuestro equipo acceda a tu información de cuenta para asistirte mejor.
+                                        {t('support.form.disclaimer')}
                                     </p>
                                 </form>
                             )}
@@ -245,22 +247,3 @@ export default function CustomerHelp() {
         </div>
     );
 }
-
-// Add this inline for the check circle if needed or use the one from Dashboard
-const CheckCircle2 = (props: any) => (
-    <svg
-        {...props}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-    >
-        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
-        <path d="m9 12 2 2 4-4" />
-    </svg>
-)

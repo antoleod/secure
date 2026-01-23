@@ -205,19 +205,14 @@ export async function decideLoanRequest(options: {
     decision: 'approve' | 'reject';
     rejectionReason?: string;
     // Approval args
-    interestRate?: number; // Not used in new Loan model directly? Wait, Loan model has principalCents, outstandingCents. 
-    // We need to construct the Loan object fully.
-    // Let's assume we pass a Partial<Loan> or specific params for the Loan creation.
-    // For now, let's keep it simple and minimal.
-    approvedLoanParams?: {
-        principalCents: number;
-        startDate: Timestamp;
-        cutoffHour: number;
-        maxDurationMonths: number;
-        post6mMinPrincipalPct: number;
-        businessDaysOnly: boolean;
-        collateralId: string;
-    }
+    interestRate?: number;
+    principalCents?: number;
+    startDate?: Timestamp;
+    cutoffHour?: number;
+    maxDurationMonths?: number;
+    post6mMinPrincipalPct?: number;
+    businessDaysOnly?: boolean;
+    collateralId?: string;
 }) {
     const result = await runTransaction(db, async (tx) => {
         const requestRef = doc(db, 'loan_requests', options.requestId).withConverter(loanRequestConverter);
@@ -227,7 +222,7 @@ export async function decideLoanRequest(options: {
         }
         const request = requestSnap.data();
         const requestId = request.id ?? options.requestId;
-        if (request.status !== 'submitted') { // Removed 'under_review'
+        if (request.status !== 'submitted') {
             throw new Error('Request already decided');
         }
 
@@ -242,12 +237,12 @@ export async function decideLoanRequest(options: {
             });
 
             // Audit
-            const auditRef = doc(collection(db, 'audit_logs')).withConverter(auditLogConverter); // snake_case
+            const auditRef = doc(collection(db, 'audit_logs')).withConverter(auditLogConverter);
             tx.set(auditRef, {
                 action: 'loan_rejected' as AuditAction,
                 actorUid: options.adminUid,
                 actorRole: 'admin',
-                entityType: 'loan', // refers to request really
+                entityType: 'loan',
                 entityId: requestId,
                 details: { reason: options.rejectionReason },
                 timestamp: now,
@@ -257,7 +252,7 @@ export async function decideLoanRequest(options: {
         }
 
         // Approval Logic
-        if (!options.approvedLoanParams) throw new Error("Missing loan params for approval");
+        if (options.principalCents === undefined) throw new Error("Missing loan principal for approval");
 
         const loanRef = doc(collection(db, 'loans')).withConverter(loanConverter);
         const newLoan: Loan = {
@@ -265,14 +260,15 @@ export async function decideLoanRequest(options: {
             customerUid: request.customerUid,
             requestId: requestId,
             status: 'active',
-            principalCents: options.approvedLoanParams.principalCents,
-            outstandingCents: options.approvedLoanParams.principalCents,
-            startDate: options.approvedLoanParams.startDate,
-            cutoffHour: options.approvedLoanParams.cutoffHour,
-            businessDaysOnly: options.approvedLoanParams.businessDaysOnly,
-            maxDurationMonths: options.approvedLoanParams.maxDurationMonths,
-            post6mMinPrincipalPct: options.approvedLoanParams.post6mMinPrincipalPct,
-            collateralId: options.approvedLoanParams.collateralId,
+            principalCents: options.principalCents,
+            outstandingCents: options.principalCents,
+            interestRate: options.interestRate ?? 0,
+            startDate: options.startDate ?? now,
+            cutoffHour: options.cutoffHour ?? 18,
+            businessDaysOnly: options.businessDaysOnly ?? true,
+            maxDurationMonths: options.maxDurationMonths ?? 6,
+            post6mMinPrincipalPct: options.post6mMinPrincipalPct ?? 0,
+            collateralId: options.collateralId ?? request.collateralId,
             createdAt: now,
             updatedAt: now,
         };

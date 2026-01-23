@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { listLoansForUser, fetchLoyaltyStatus, fetchKyc, listCustomerRequests } from '@/lib/firestoreClient';
+import { useI18n } from '@/contexts/I18nContext';
 import {
     Wallet,
     ShieldCheck,
@@ -23,6 +24,7 @@ import { motion } from 'framer-motion';
 
 export default function CustomerDashboard() {
     const { user, userData } = useAuth();
+    const { t } = useI18n();
 
     // Data Fetching
     const { data: loans, isLoading: loansLoading } = useQuery({
@@ -52,28 +54,18 @@ export default function CustomerDashboard() {
     const globalLoading = loansLoading || loyaltyLoading || kycLoading || requestsLoading;
 
     // Calculations
-    const activeLoan = useMemo(() => loans?.find(l => l.status === 'active'), [loans]);
+    const activeLoanCount = useMemo(() => loans?.filter(l => l.status === 'active').length || 0, [loans]);
     const totalDebt = useMemo(() => loans?.reduce((acc, curr) => acc + (curr.status === 'active' ? curr.outstandingCents : 0), 0) || 0, [loans]);
-
-    const nextTierInfo = useMemo(() => {
-        const tier = loyalty?.tier || 'standard';
-        switch (tier) {
-            case 'standard': return { next: 'Bronze', progress: (loyalty?.completedGoodLoansCount || 0) / 2 * 100 };
-            case 'bronze': return { next: 'Silver', progress: (loyalty?.completedGoodLoansCount || 0) / 5 * 100 };
-            case 'silver': return { next: 'Gold', progress: (loyalty?.completedGoodLoansCount || 0) / 10 * 100 };
-            default: return { next: 'MAX', progress: 100 };
-        }
-    }, [loyalty]);
 
     const greeting = useMemo(() => {
         const hour = new Date().getHours();
-        if (hour < 12) return 'Buenos días';
-        if (hour < 18) return 'Buenas tardes';
-        return 'Buenas noches';
-    }, []);
+        if (hour < 12) return t('greeting.morning');
+        if (hour < 18) return t('greeting.afternoon');
+        return t('greeting.evening');
+    }, [t]);
 
     return (
-        <div className="space-y-8 pb-32 font-sans overflow-x-hidden">
+        <div className="space-y-8 pb-32 font-sans overflow-x-hidden animate-in fade-in duration-700">
             {/* HER0 / WELCOME SECTION */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <motion.div
@@ -83,10 +75,10 @@ export default function CustomerDashboard() {
                 >
                     <p className="text-blue-600 font-black uppercase tracking-[0.3em] text-[10px] mb-2">{greeting}</p>
                     <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none">
-                        Hola, {userData?.fullName?.split(' ')[0] || <Skeleton className="h-10 w-32 inline-block" />} 👋
+                        {t('dashboard.hello', { name: userData?.fullName?.split(' ')[0] || '' })}
                     </h1>
                     <p className="text-slate-500 mt-3 max-w-md text-lg">
-                        {loansLoading ? <Skeleton className="h-4 w-full mt-2" /> : `Bienvenido al centro financiero de Oryxen. Tienes ${loans?.filter(l => l.status === 'active').length || 0} préstamos activos.`}
+                        {loansLoading ? <Skeleton className="h-4 w-full mt-2" /> : t('dashboard.welcomeText', { count: activeLoanCount })}
                     </p>
                 </motion.div>
 
@@ -98,242 +90,223 @@ export default function CustomerDashboard() {
                     <Link to="/app/collateral">
                         <Button className="bg-slate-900 hover:bg-black text-white shadow-2xl shadow-slate-200 rounded-3xl px-8 py-8 h-auto group transition-all duration-500">
                             <Plus className="mr-3 h-6 w-6 group-hover:rotate-90 transition-transform duration-500" />
-                            <div className="flex flex-col items-start leading-tight">
-                                <span className="font-black text-lg">Nueva Prenda</span>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Empezar tasación</span>
+                            <div className="text-left">
+                                <span className="block text-[10px] font-black uppercase tracking-widest opacity-60">{t('collateral.add.subcta')}</span>
+                                <span className="block text-lg font-black">{t('collateral.add.cta')}</span>
                             </div>
                         </Button>
                     </Link>
                 </motion.div>
             </div>
 
-            {/* MAIN STATS GRID */}
+            {/* KRI CARDS SECTION */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* DEBT CARD */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <Card className="border-none bg-gradient-to-br from-slate-900 to-slate-800 shadow-2xl shadow-slate-200 overflow-hidden relative h-[220px]">
-                        <div className="absolute top-0 right-0 p-8 opacity-10">
-                            <Wallet className="w-24 h-24 text-white" />
+                {/* Total debt card */}
+                <motion.div whileHover={{ y: -5 }} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-slate-100">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                            <Wallet className="h-6 w-6" />
                         </div>
-                        <CardContent className="pt-10 flex flex-col h-full justify-between pb-8">
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center">
-                                        <TrendingUp className="h-4 w-4 text-blue-400" />
-                                    </div>
-                                    <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">Deuda Total</span>
-                                </div>
-                                {loansLoading ? (
-                                    <Skeleton className="h-12 w-40 bg-white/5" />
-                                ) : (
-                                    <h2 className="text-5xl font-black text-white tracking-tighter">{(totalDebt / 100).toFixed(2)}€</h2>
-                                )}
-                            </div>
-                            <div className="flex items-center justify-between text-white/30 text-[10px] font-black uppercase tracking-widest pt-6 border-t border-white/5">
-                                <span>Límite Estimado</span>
-                                <span className="text-blue-400">1.250€</span>
-                            </div>
-                        </CardContent>
-                    </Card>
+                        <TrendingUp className="h-5 w-5 text-slate-200" />
+                    </div>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('dashboard.totalDebt')}</p>
+                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter">
+                        {loansLoading ? <Skeleton className="h-10 w-24" /> : `${(totalDebt / 100).toLocaleString('es-ES')}€`}
+                    </h3>
                 </motion.div>
 
-                {/* LOYALTY CARD */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                    <Card className="border-slate-100 bg-white shadow-sm hover:shadow-xl transition-all duration-500 rounded-[2.5rem] h-[220px]">
-                        <CardContent className="pt-10 flex flex-col h-full justify-between pb-8">
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
-                                            <Trophy className="h-4 w-4 text-amber-600" />
-                                        </div>
-                                        <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Estatus Oryxen</span>
-                                    </div>
-                                    {loyaltyLoading ? <Skeleton className="h-5 w-16" /> : (
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 bg-amber-50 px-3 py-1 rounded-full ring-1 ring-amber-100">
-                                            {loyalty?.tier || 'Standard'}
-                                        </span>
-                                    )}
-                                </div>
-                                {loyaltyLoading ? (
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-8 w-48" />
-                                        <Skeleton className="h-2 w-full" />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <h2 className="text-3xl font-black text-slate-800 tracking-tight">Nivel {loyalty?.tier || 'Member'}</h2>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                <span>A {nextTierInfo.next}</span>
-                                                <span>{nextTierInfo.progress.toFixed(0)}%</span>
-                                            </div>
-                                            <div className="h-1.5 bg-slate-50 rounded-full overflow-hidden">
-                                                <motion.div
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${nextTierInfo.progress}%` }}
-                                                    transition={{ duration: 1.5, ease: "easeOut" }}
-                                                    className="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full"
-                                                />
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Estimated Limit */}
+                <motion.div whileHover={{ y: -5 }} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-slate-100">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                            <Gem className="h-6 w-6" />
+                        </div>
+                        <ArrowUpRight className="h-5 w-5 text-slate-200" />
+                    </div>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('dashboard.estimatedLimit')}</p>
+                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter">
+                        {loyaltyLoading ? <Skeleton className="h-10 w-24" /> : `${(loyalty?.creditLimitCents ? loyalty.creditLimitCents / 100 : 2500).toLocaleString('es-ES')}€`}
+                    </h3>
                 </motion.div>
 
-                {/* KYC CARD */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                    <Card className="border-slate-100 bg-white shadow-sm hover:shadow-xl transition-all duration-500 rounded-[2.5rem] h-[220px]">
-                        <CardContent className="pt-10 flex flex-col h-full justify-between pb-8">
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                                        <ShieldCheck className="h-4 w-4 text-blue-600" />
-                                    </div>
-                                    <span className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">Identidad</span>
-                                </div>
-                                {kycLoading ? (
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-6 w-32" />
-                                        <Skeleton className="h-4 w-full" />
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {kyc?.status === 'verified' ? (
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-2 text-emerald-600">
-                                                    <CheckCircle className="h-6 w-6" />
-                                                    <span className="text-xl font-black tracking-tight">Verificado</span>
-                                                </div>
-                                                <p className="text-xs text-slate-400 font-bold leading-relaxed uppercase tracking-wider">Máxima confianza financiera habilitada.</p>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                <div className="flex items-center gap-2 text-amber-500">
-                                                    <Clock className="h-6 w-6" />
-                                                    <span className="text-xl font-black tracking-tight">Pendiente</span>
-                                                </div>
-                                                <Link to="/app/verify-identity" className="text-blue-600 text-xs font-black uppercase tracking-widest hover:underline flex items-center gap-1 leading-none">
-                                                    Completar Perfil <ChevronRight className="h-3 w-3" />
-                                                </Link>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Status Oryxen */}
+                <motion.div whileHover={{ y: -5 }} className="bg-slate-950 p-8 rounded-[2.5rem] shadow-2xl shadow-indigo-200 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-1000" />
+                    <div className="flex items-center justify-between mb-6 relative z-10">
+                        <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400">
+                            <Trophy className="h-6 w-6" />
+                        </div>
+                        <span className="bg-indigo-500 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg shadow-indigo-500/40">VIP</span>
+                    </div>
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 relative z-10">{t('dashboard.status.oryxen')}</p>
+                    <h3 className="text-2xl font-black text-white tracking-tight relative z-10 uppercase italic">
+                        {loyaltyLoading ? <Skeleton className="h-8 w-24 bg-slate-800" /> : (loyalty?.tier || 'Gold Member')}
+                    </h3>
                 </motion.div>
             </div>
 
-            {/* SECONDARY ROW: FEED */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* ACTIVITY FEED */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="lg:col-span-2"
-                >
-                    <Card className="border-none bg-white shadow-xl shadow-slate-100 rounded-[3rem] overflow-hidden">
-                        <CardHeader className="px-8 pt-10 pb-6">
-                            <div className="flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <CardTitle className="text-2xl font-black tracking-tight text-slate-900">Actividad en Vivo</CardTitle>
-                                    <CardDescription className="text-slate-400 font-bold text-xs uppercase tracking-widest">Sigue tus solicitudes</CardDescription>
+            {/* IDENTITY & ACTIVITY SECTION */}
+            <div className="grid grid-cols-1 lg:grid-cols-7 gap-8 items-start">
+
+                {/* Left Column - Mini Statuses */}
+                <div className="lg:col-span-2 space-y-6">
+                    {/* Identity Status */}
+                    <Link to="/app/verify-identity">
+                        <motion.div whileHover={{ scale: 1.02 }} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group">
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${kyc?.status === 'verified' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                    <ShieldCheck className="h-6 w-6" />
                                 </div>
-                                <Button variant="ghost" className="text-[10px] font-black tracking-[0.2em] uppercase text-slate-400 hover:text-slate-900">Ver Historial</Button>
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{t('dashboard.identity.status')}</p>
+                                    <p className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                                        {kycLoading ? t('common.loading') : (kyc?.status === 'verified' ? t('dashboard.identity.verified') : (kyc?.status === 'pending' ? t('dashboard.identity.pending') : t('dashboard.identity.complete')))}
+                                    </p>
+                                </div>
                             </div>
-                        </CardHeader>
-                        <CardContent className="px-8 pb-10">
-                            <div className="space-y-2">
-                                {requestsLoading ? (
-                                    [1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full rounded-3xl mb-4" />)
-                                ) : requests && requests.length > 0 ? (
-                                    requests.slice(0, 4).map((req, i) => (
-                                        <motion.div
-                                            key={i}
-                                            whileHover={{ x: 5 }}
-                                            className="p-5 flex items-center justify-between group bg-slate-50/50 hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-sm rounded-[2rem] transition-all duration-300"
-                                        >
-                                            <div className="flex items-center gap-4 text-left">
-                                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 ${req.status === 'approved' ? 'bg-emerald-500 shadow-emerald-100' :
-                                                    req.status === 'rejected' ? 'bg-red-500 shadow-red-100' : 'bg-blue-600 shadow-blue-100'
-                                                    }`}>
-                                                    <ArrowUpRight className="h-6 w-6 text-white" />
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <p className="text-base font-black text-slate-900 leading-none">Solicitud de {req.amountRequested}€</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.1em]">{req.createdAt.toDate().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric' })}</p>
-                                                </div>
-                                            </div>
-                                            <div className={`px-4 py-1.5 rounded-full text-[9px] font-black tracking-[0.2em] uppercase ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                                                req.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                            <ChevronRight className="h-4 w-4 text-slate-200 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                        </motion.div>
+                    </Link>
+
+                    {/* Help Support */}
+                    <Link to="/app/help">
+                        <motion.div whileHover={{ scale: 1.02 }} className="bg-blue-600 p-8 rounded-[2rem] text-white relative overflow-hidden group">
+                            <div className="relative z-10">
+                                <h4 className="text-xl font-black tracking-tight">{t('dashboard.help.title')}</h4>
+                                <p className="text-blue-200 text-sm mt-1 mb-6 font-bold">{t('dashboard.help.subtitle')}</p>
+                                <div className="flex -space-x-3 overflow-hidden mb-6">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-blue-600 bg-blue-100 border border-blue-200 flex items-center justify-center overflow-hidden">
+                                            <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=agent${i}`} alt="Agent" />
+                                        </div>
+                                    ))}
+                                    <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-blue-600 bg-blue-700 text-[10px] font-black">+5</div>
+                                </div>
+                                <Button className="w-full bg-white/20 hover:bg-white/30 text-white rounded-xl border-none shadow-none text-[10px] font-black uppercase tracking-widest">{t('common.view')}</Button>
+                            </div>
+                            <ShoppingBag className="absolute -bottom-6 -right-6 h-32 w-32 text-white opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-1000" />
+                        </motion.div>
+                    </Link>
+                </div>
+
+                {/* Right Column - Live Activity */}
+                <Card className="lg:col-span-5 border-none shadow-2xl shadow-slate-100 rounded-[3rem] overflow-hidden bg-white">
+                    <CardHeader className="bg-slate-50/50 p-10 flex flex-row items-center justify-between border-b border-slate-100">
+                        <div>
+                            <div className="flex items-center gap-2 text-blue-600 mb-1">
+                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 bg-blue-600 rounded-full" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">{t('dashboard.activity.title')}</span>
+                            </div>
+                            <CardTitle className="text-3xl font-black text-slate-900 tracking-tight">{t('dashboard.activity.subtitle')}</CardTitle>
+                        </div>
+                        <Button variant="outline" className="rounded-2xl border-slate-200 text-[10px] font-black uppercase tracking-widest px-6 h-12 shadow-sm hover:bg-slate-50">{t('dashboard.activity.history')}</Button>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        {requestsLoading ? (
+                            <div className="p-10 space-y-6">
+                                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
+                            </div>
+                        ) : requests?.length === 0 ? (
+                            <div className="p-20 text-center space-y-4">
+                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-200">
+                                    <Clock className="h-8 w-8" />
+                                </div>
+                                <p className="text-slate-400 font-bold">{t('dashboard.activity.empty')}</p>
+                            </div>
+                        ) : (
+                            <div className="divide-y divide-slate-100">
+                                {requests?.map((req, idx) => (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: idx * 0.1 }}
+                                        key={req.id}
+                                        className="p-8 hover:bg-slate-50/50 transition-colors flex items-center justify-between group cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-6">
+                                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl transition-transform group-hover:scale-110 duration-500 shadow-sm ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                                                req.status === 'rejected' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
                                                 }`}>
-                                                {req.status}
+                                                {req.status === 'approved' ? <CheckCircleIcon className="h-6 w-6" /> : (req.status === 'rejected' ? <Info className="h-6 w-6" /> : <Clock className="h-6 w-6" />)}
                                             </div>
-                                        </motion.div>
-                                    ))
-                                ) : (
-                                    <div className="py-20 text-center flex flex-col items-center gap-4">
-                                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
-                                            <ActivityIcon className="h-8 w-8" />
+                                            <div>
+                                                <h5 className="font-black text-slate-900 text-lg tracking-tight">Solicitud de Crédito</h5>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">#{req.id?.slice(0, 8)}</span>
+                                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                        {req.createdAt?.toDate ? req.createdAt.toDate().toLocaleDateString() : 'Hoy'}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <p className="text-slate-400 text-sm font-bold uppercase tracking-widest italic">Aún no tienes movimientos.</p>
-                                    </div>
-                                )}
+                                        <div className="flex items-center gap-6 text-right">
+                                            <div>
+                                                <p className="text-xl font-black text-slate-900 tracking-tighter">{(req.amountRequested / 100).toLocaleString('es-ES')}€</p>
+                                                <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${req.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                                                    req.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'
+                                                    }`}>
+                                                    {t(`common.status.${req.status}`)}
+                                                </span>
+                                            </div>
+                                            <ChevronRight className="h-5 w-5 text-slate-200 group-hover:text-blue-600 transition-all" />
+                                        </div>
+                                    </motion.div>
+                                ))}
                             </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-
-                {/* SIDE CARDS */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="space-y-6"
-                >
-                    <Card className="bg-blue-600 text-white border-none shadow-2xl shadow-blue-100 rounded-[3rem] relative overflow-hidden group">
-                        <div className="absolute -bottom-6 -right-6 opacity-20">
-                            <ShoppingBag className="w-40 h-40 group-hover:scale-110 transition-transform duration-700" />
-                        </div>
-                        <CardHeader className="pt-10">
-                            <div className="flex items-center gap-2 mb-2">
-                                <SparklesIcon className="h-4 w-4 text-blue-300" />
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-200">Tienda Especial</span>
-                            </div>
-                            <CardTitle className="text-3xl font-black tracking-tight leading-none">Mejores<br />Ofertas</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pb-10 pt-4">
-                            <Link to="/app/store">
-                                <Button className="w-full bg-white text-blue-600 hover:bg-blue-50 h-14 rounded-2xl shadow-xl font-black text-xs uppercase tracking-widest">
-                                    Ir de Compras
-                                    <ArrowUpRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-slate-100 bg-white rounded-[3rem] p-4 border-dashed">
-                        <CardContent className="flex items-center gap-4 pt-4">
-                            <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center shrink-0">
-                                <Gem className="h-6 w-6 text-blue-500" />
-                            </div>
-                            <div className="flex-1">
-                                <h4 className="text-sm font-black text-slate-900 tracking-tight leading-none">¿Dudas?</h4>
-                                <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase leading-none">Soporte 24/7</p>
-                            </div>
-                            <Link to="/app/help">
-                                <Button size="icon" variant="ghost" className="rounded-xl border border-slate-50"><ChevronRight className="h-4 w-4 text-slate-300" /></Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-                </motion.div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
+
+            {/* STORE PREVIEW BANNER */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="bg-slate-900 rounded-[3.5rem] p-12 md:p-20 relative overflow-hidden group"
+            >
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-600/20 to-transparent pointer-events-none" />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
+                    <div>
+                        <div className="flex items-center gap-2 text-blue-400 mb-6 font-black uppercase tracking-[0.4em] text-xs">
+                            <SparklesIcon className="h-5 w-5" />
+                            <span>{t('dashboard.store.subtitle')}</span>
+                        </div>
+                        <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">{t('dashboard.store.title')}</h2>
+                        <p className="text-slate-400 mt-8 text-lg max-w-sm leading-relaxed">
+                            Accede a dispositivos de última generación procedentes de liquidaciones con descuentos de hasta el 40%. Solo para miembros Oryxen.
+                        </p>
+                        <Link to="/app/store">
+                            <Button className="mt-12 bg-white hover:bg-slate-100 text-slate-900 px-10 py-8 h-auto rounded-[1.5rem] font-black uppercase tracking-widest text-xs shadow-2xl transition-all active:scale-95">
+                                {t('dashboard.store.cta')}
+                            </Button>
+                        </Link>
+                    </div>
+                    <div className="relative group-hover:scale-105 transition-transform duration-1000">
+                        <div className="absolute inset-0 bg-blue-500/20 blur-[120px] rounded-full" />
+                        <motion.div
+                            animate={{ y: [0, -20, 0] }}
+                            transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+                            className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-[3rem] p-4 p-8 relative"
+                        >
+                            <div className="aspect-square bg-slate-800 rounded-[2rem] overflow-hidden mb-6">
+                                <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=800&auto=format&fit=crop" className="w-full h-full object-cover opacity-60" alt="Special item" />
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h4 className="text-white font-black text-xl tracking-tight">iPhone 15 Pro Max</h4>
+                                    <p className="text-blue-400 font-black text-xs uppercase tracking-widest mt-1">Liquidación Flash</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-slate-400 text-xs line-through">1.299€</p>
+                                    <p className="text-white font-black text-2xl tracking-tighter">849€</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </motion.div>
         </div>
     );
 }
@@ -342,9 +315,6 @@ export default function CustomerDashboard() {
 const SparklesIcon = (props: any) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /><path d="M5 3v4" /><path d="M19 17v4" /><path d="M3 5h4" /><path d="M17 19h4" /></svg>
 )
-const ActivityIcon = (props: any) => (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-)
-const CheckCircle = (props: any) => (
+const CheckCircleIcon = (props: any) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
 )

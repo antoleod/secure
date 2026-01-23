@@ -53,16 +53,16 @@ export function CustomerLayout() {
     }
 
     const footerLinks = [
-        { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/app/collateral', label: 'Mis Prendas', icon: ShieldCheck },
-        { to: '/app/loans', label: 'Créditos', icon: Wallet },
-        { to: '/app/payments', label: 'Pagos', icon: CreditCard },
+        { to: '/app', label: t('nav.dashboard'), icon: LayoutDashboard },
+        { to: '/app/collateral', label: t('nav.collateral'), icon: ShieldCheck },
+        { to: '/app/loans', label: t('nav.loans'), icon: Wallet },
+        { to: '/app/payments', label: t('nav.payments'), icon: CreditCard },
     ];
 
     const headerLinks = [
-        { to: '/app/verify-identity', label: 'ID', icon: UserCheck },
-        { to: '/app/store', label: 'Marketplace', icon: ShoppingBag },
-        { to: '/app/help', label: 'Soporte', icon: HelpCircle },
+        { to: '/app/verify-identity', label: t('nav.identity'), icon: UserCheck },
+        { to: '/app/store', label: t('nav.marketplace'), icon: ShoppingBag },
+        { to: '/app/help', label: t('nav.support'), icon: HelpCircle },
     ];
 
     const isActive = (path: string) => location.pathname === path;
@@ -152,11 +152,20 @@ export function CustomerLayout() {
                                 </div>
                                 <div className="hidden lg:flex flex-col leading-none">
                                     <span className="text-[10px] font-black text-slate-900">{userData?.fullName?.split(' ')[0]}</span>
-                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Mi Perfil</span>
+                                    <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{t('nav.profile')}</span>
                                 </div>
                                 <ChevronRight className="h-3 w-3 text-slate-300 ml-1" />
                             </motion.div>
                         </Link>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                            onClick={handleLogout}
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
             </header>
@@ -199,7 +208,7 @@ export function CustomerLayout() {
                                             scale: active ? 1.2 : 1,
                                             y: active ? -4 : 0
                                         }}
-                                        className={`${active ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'} transition-colors duration-300`}
+                                        className={`${active ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-300'} transition-colors duration-300`}
                                     >
                                         <Icon className="h-6 w-6" />
                                     </motion.div>

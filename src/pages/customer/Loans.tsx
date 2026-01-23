@@ -3,6 +3,7 @@ import { collection, query, where, getDocs, updateDoc, doc, Timestamp } from 'fi
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loan } from '@/types';
+import { useI18n } from '@/contexts/I18nContext';
 import {
     Loader2,
     AlertTriangle,
@@ -21,6 +22,7 @@ import { Link } from 'react-router-dom';
 
 export default function CustomerLoans() {
     const { user } = useAuth();
+    const { t } = useI18n();
     const [loans, setLoans] = useState<Loan[]>([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export default function CustomerLoans() {
     if (loading) return (
         <div className="min-h-[60vh] flex flex-col items-center justify-center text-slate-400 gap-4">
             <Loader2 className="animate-spin h-10 w-10 text-blue-600" />
-            <p className="font-bold uppercase tracking-widest text-xs">Sincronizando cuentas...</p>
+            <p className="font-bold uppercase tracking-widest text-xs">{t('common.loading')}</p>
         </div>
     );
 
@@ -86,7 +88,7 @@ export default function CustomerLoans() {
                         <Wallet className="h-5 w-5" />
                         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Cuentas de Crédito</span>
                     </div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">Mis Préstamos</h1>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight">{t('loans.list.title')}</h1>
                     <p className="text-slate-500 mt-2">
                         Gestiona tus créditos activos, solicita entregas de prendas o revisa tu historial.
                     </p>
@@ -99,132 +101,130 @@ export default function CustomerLoans() {
                     </div>
                     <div className="h-10 w-[1px] bg-slate-100" />
                     <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Saldo Pendiente</p>
-                        <p className="text-2xl font-black text-blue-600">{(stats.totalDebt / 100).toLocaleString('es-ES')}€</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Saldo Deudor</p>
+                        <p className="text-2xl font-black text-blue-600 italic">{(stats.totalDebt / 100).toLocaleString('es-ES')}€</p>
                     </div>
                 </div>
             </div>
 
-            {loans.length === 0 ? (
-                <div className="py-24 text-center bg-white border border-dashed border-slate-200 rounded-[3rem]">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
-                        <Search className="h-8 w-8" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800">No tienes préstamos activos</h3>
-                    <p className="text-slate-400 max-w-xs mx-auto mt-2 text-sm leading-relaxed">
-                        Parece que no tienes créditos vigentes. Registra una prenda para solicitar financiamiento inmediato.
-                    </p>
-                    <Link to="/app/collateral">
-                        <Button className="mt-6 bg-slate-900 hover:bg-black rounded-2xl px-8">
-                            Registrar Prenda
-                        </Button>
-                    </Link>
-                </div>
-            ) : (
-                <div className="grid gap-6">
-                    {loans.map(loan => (
-                        <Card key={loan.id} className="border-none shadow-sm hover:shadow-md transition-shadow rounded-[2rem] overflow-hidden group">
-                            <CardContent className="p-0">
-                                <div className="flex flex-col md:flex-row">
-                                    {/* Left Accent */}
-                                    <div className={`w-full md:w-2 ${loan.status === 'active' ? 'bg-blue-600' :
-                                            loan.status === 'overdue' ? 'bg-red-600' :
-                                                'bg-slate-200'
-                                        }`} />
-
-                                    <div className="flex-1 p-8">
-                                        <div className="flex flex-col lg:flex-row justify-between gap-6">
-                                            {/* Info Section */}
-                                            <div className="flex-1 space-y-4">
-                                                <div className="flex items-center gap-3">
-                                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Préstamo #{loan.id?.slice(-6).toUpperCase()}</h3>
-                                                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${loan.status === 'active' ? 'bg-blue-50 text-blue-600' :
-                                                            loan.status === 'closed' ? 'bg-emerald-50 text-emerald-600' :
-                                                                'bg-slate-100 text-slate-500'
-                                                        }`}>
-                                                        {loan.status === 'active' ? 'EN VIGOR' : loan.status.toUpperCase()}
-                                                    </span>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" /> Inicio
-                                                        </p>
-                                                        <p className="text-sm font-bold text-slate-700">{loan.startDate.toDate().toLocaleDateString()}</p>
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
-                                                            <CreditCard className="h-3 w-3" /> Principal
-                                                        </p>
-                                                        <p className="text-sm font-bold text-slate-700">{(loan.principalCents / 100).toLocaleString('es-ES')}€</p>
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1 flex items-center gap-1">
-                                                            <Info className="h-3 w-3" /> Tasa
-                                                        </p>
-                                                        <p className="text-sm font-bold text-slate-700">{loan.businessDaysOnly ? 'Solo Hábiles' : 'Calendario'}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Financials / Actions Section */}
-                                            <div className="flex flex-col lg:items-end justify-between min-w-[200px] border-t lg:border-t-0 lg:border-l border-slate-50 pt-6 lg:pt-0 lg:pl-10">
-                                                <div className="text-left lg:text-right mb-4 lg:mb-0">
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Saldo a Liquidar</p>
-                                                    <p className={`text-4xl font-black tracking-tighter ${loan.status === 'overdue' ? 'text-red-600' : 'text-blue-600'
-                                                        }`}>
-                                                        {(loan.outstandingCents / 100).toLocaleString('es-ES')}€
-                                                    </p>
-                                                </div>
-
-                                                <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                                                    {loan.status === 'active' && !loan.surrenderRequested && (
-                                                        <>
-                                                            <Link to={`/app/payments?loanId=${loan.id}`} className="flex-1 sm:flex-initial">
-                                                                <Button className="w-full bg-slate-900 shadow-lg shadow-slate-200 rounded-xl px-6 h-10 text-xs font-bold">
-                                                                    Pagar Cuota
-                                                                </Button>
-                                                            </Link>
-                                                            <Button
-                                                                variant="outline"
-                                                                onClick={() => loan.id && handleSurrender(loan.id)}
-                                                                disabled={!!processing}
-                                                                className="rounded-xl px-6 h-10 text-xs font-bold text-slate-500 hover:text-red-600 hover:border-red-100 hover:bg-red-50"
-                                                            >
-                                                                {processing === loan.id ? <Loader2 className="animate-spin h-3 w-3" /> : 'Entregar Prenda'}
-                                                            </Button>
-                                                        </>
-                                                    )}
-
-                                                    {loan.surrenderRequested && (
-                                                        <div className="flex items-center gap-2 bg-orange-50 border border-orange-100 text-orange-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest">
-                                                            <AlertTriangle className="h-4 w-4" />
-                                                            Entrega en proceso
-                                                        </div>
-                                                    )}
-
-                                                    {loan.status === 'closed' && (
-                                                        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest">
-                                                            <CheckCircle className="h-4 w-4" />
-                                                            Liquidado
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
+            {/* Loans Table / Grid */}
+            <div className="grid grid-cols-1 gap-6">
+                {loans.length === 0 ? (
+                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-slate-50 p-20 text-center">
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Info className="h-10 w-10 text-slate-200" />
+                        </div>
+                        <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">{t('loans.list.empty')}</h3>
+                        <Link to="/app/collateral">
+                            <Button variant="link" className="mt-4 text-blue-600 font-black uppercase tracking-widest text-[10px]">Tasar una prenda para empezar</Button>
+                        </Link>
+                    </Card>
+                ) : (
+                    loans.map((loan) => (
+                        <Card key={loan.id} className="rounded-[2.5rem] border-none shadow-xl shadow-indigo-50/20 overflow-hidden hover:shadow-indigo-500/10 transition-all duration-500 group">
+                            <div className="flex flex-col lg:flex-row">
+                                {/* Left Section - Brand/ID */}
+                                <div className="p-8 lg:w-1/3 bg-slate-50 group-hover:bg-blue-50 transition-colors">
+                                    <div className="flex items-center gap-3 mb-6">
+                                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
+                                            <CreditCard className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">ID PRÉSTAMO</p>
+                                            <p className="font-mono text-xs font-black text-slate-900">#{loan.id?.slice(-8).toUpperCase()}</p>
                                         </div>
                                     </div>
-
-                                    {/* Interaction Chevron for Desktop */}
-                                    <div className="hidden lg:flex items-center justify-center pr-6 text-slate-100 group-hover:text-slate-300 transition-colors">
-                                        <ChevronRight className="h-8 w-8" />
+                                    <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-none mb-4 uppercase">
+                                        {loan.collateralRefs && loan.collateralRefs.length > 0 ? "Varios artículos" : "Crédito Rápido"}
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${loan.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                                            }`}>
+                                            {t(`common.status.${loan.status}`)}
+                                        </span>
+                                        {loan.surrenderRequested && (
+                                            <span className="px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-100 text-amber-700">ENTREGA SOLICITADA</span>
+                                        )}
                                     </div>
                                 </div>
-                            </CardContent>
+
+                                {/* Right Section - Financial Stats */}
+                                <div className="p-8 flex-1 bg-white grid grid-cols-2 md:grid-cols-4 gap-8">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('loans.details.balance')}</p>
+                                        <p className="text-2xl font-black text-slate-900 tracking-tighter italic">{(loan.outstandingCents / 100).toLocaleString('es-ES')}€</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Próx. Cuota</p>
+                                        <p className="text-2xl font-black text-slate-900 tracking-tighter italic">
+                                            {loan.nextDueDate ? (loan.nextDueDate.toDate().toLocaleDateString()) : '---'}
+                                        </p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Interés Anual</p>
+                                        <p className="text-2xl font-black text-blue-600 tracking-tighter italic">{loan.interestRate}%</p>
+                                    </div>
+                                    <div className="flex items-center justify-end gap-3">
+                                        {loan.status === 'active' && (
+                                            <>
+                                                <Button
+                                                    onClick={() => handleSurrender(loan.id!)}
+                                                    variant="outline"
+                                                    disabled={!!processing || loan.surrenderRequested}
+                                                    className="rounded-2xl border-slate-200 h-14 px-6 text-[10px] font-black uppercase tracking-widest hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-all"
+                                                >
+                                                    {processing === loan.id ? <Loader2 className="animate-spin" /> : "Entregar Prenda"}
+                                                </Button>
+                                                <Link to="/app/payments">
+                                                    <Button className="rounded-2xl bg-slate-900 hover:bg-blue-600 h-14 px-8 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-200">
+                                                        Pagar
+                                                    </Button>
+                                                </Link>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </Card>
-                    ))}
+                    ))
+                )}
+            </div>
+
+            {/* Education / Info Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
+                <div className="bg-indigo-600 p-10 rounded-[3rem] text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
+                            <Info className="h-6 w-6" />
+                        </div>
+                        <h3 className="text-2xl font-black tracking-tight leading-none mb-4">¿Cómo funcionan los pagos?</h3>
+                        <p className="text-indigo-100 text-sm opacity-80 leading-relaxed mb-6">
+                            Los pagos se realizan mensualmente o al final del plazo. Debes realizar una transferencia bancaria y subir el justificante para que el administrador confirme la reducción de tu saldo.
+                        </p>
+                        <Button className="bg-indigo-700 hover:bg-indigo-800 border-none rounded-xl h-12 px-8 text-[10px] font-black uppercase tracking-widest">Manual de Usuario</Button>
+                    </div>
+                    <Wallet className="absolute -bottom-10 -right-10 h-48 w-48 text-white opacity-10 group-hover:scale-110 transition-transform duration-1000" />
                 </div>
-            )}
+
+                <div className="bg-slate-900 p-10 rounded-[3rem] text-white relative overflow-hidden group">
+                    <div className="relative z-10">
+                        <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
+                            <ShieldCheck className="h-6 w-6 text-blue-400" />
+                        </div>
+                        <h3 className="text-2xl font-black tracking-tight leading-none mb-4">Entrega de prenda para liquidar</h3>
+                        <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                            Si no deseas prorrogar o pagar tu deuda, puedes solicitar la entrega de la prenda. Nuestro equipo la pondrá a la venta en el Marketplace y cancelará tu deuda automáticamente sin afectar a tu solvencia.
+                        </p>
+                        <Button variant="outline" className="border-white/20 hover:bg-white/10 text-white rounded-xl h-12 px-8 text-[10px] font-black uppercase tracking-widest">Saber más</Button>
+                    </div>
+                    <ArrowUpRight className="absolute -bottom-10 -right-10 h-40 w-40 text-blue-500 opacity-20 group-hover:rotate-12 transition-transform duration-1000" />
+                </div>
+            </div>
         </div>
     );
 }
+
+// Missing icon
+const ShieldCheck = (props: any) => (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="m9 12 2 2 4-4" /></svg>
+)

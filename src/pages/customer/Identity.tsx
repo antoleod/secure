@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchKyc, submitKyc, uploadFile, updateProfile } from '@/lib/firestoreClient';
+import { useI18n } from '@/contexts/I18nContext';
 import {
     Loader2,
     Upload,
@@ -29,6 +30,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function CustomerIdentity() {
     const { user, userData } = useAuth();
     const queryClient = useQueryClient();
+    const { t } = useI18n();
 
     // Profile State
     const [profileForm, setProfileForm] = useState({
@@ -102,9 +104,9 @@ export default function CustomerIdentity() {
         setProfileMsg(null);
         try {
             await updateProfile(user.uid, profileForm);
-            setProfileMsg({ type: 'success', text: 'Información actualizada con éxito.' });
+            setProfileMsg({ type: 'success', text: t('identity.personal.success') });
         } catch (err) {
-            setProfileMsg({ type: 'error', text: 'Error al procesar la actualización.' });
+            setProfileMsg({ type: 'error', text: t('identity.personal.error') });
         } finally {
             setProfileSaving(false);
         }
@@ -123,11 +125,11 @@ export default function CustomerIdentity() {
             <div className="text-left space-y-2">
                 <div className="flex items-center gap-2 text-indigo-600 mb-2">
                     <Fingerprint className="h-5 w-5" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em]">Seguridad y Confianza</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em]">{t('identity.center.label')}</span>
                 </div>
-                <h1 className="text-5xl font-black text-slate-900 tracking-tight">Centro de Identidad</h1>
+                <h1 className="text-5xl font-black text-slate-900 tracking-tight">{t('identity.center.title')}</h1>
                 <p className="text-slate-500 text-lg max-w-2xl leading-relaxed">
-                    Mantén tus datos actualizados y verifica tu identidad para acceder a mejores tasas y límites de crédito instantáneos.
+                    {t('identity.center.subtitle')}
                 </p>
             </div>
 
@@ -142,8 +144,8 @@ export default function CustomerIdentity() {
                                     <User className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-2xl font-black tracking-tight leading-none">Datos del Cliente</CardTitle>
-                                    <CardDescription>Información oficial para contratos y pagos.</CardDescription>
+                                    <CardTitle className="text-2xl font-black tracking-tight leading-none">{t('identity.personal.title')}</CardTitle>
+                                    <CardDescription>{t('identity.personal.subtitle')}</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
@@ -165,20 +167,20 @@ export default function CustomerIdentity() {
 
                                 <div className="grid grid-cols-1 gap-6">
                                     <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nombre Completo</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('field.fullName')}</Label>
                                         <div className="relative group">
                                             <Input
                                                 className="h-14 pl-5 rounded-2xl border-slate-100 bg-slate-50/50 font-bold focus:ring-blue-500 transition-all"
                                                 value={profileForm.fullName}
                                                 onChange={(e) => setProfileForm(p => ({ ...p, fullName: e.target.value }))}
-                                                placeholder="Nombre tal cual aparece en tu ID"
+                                                placeholder={t('field.fullName')}
                                             />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-6">
                                         <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Teléfono</Label>
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('field.phone')}</Label>
                                             <Input
                                                 className="h-14 pl-5 rounded-2xl border-slate-100 bg-slate-50/50 font-bold"
                                                 value={profileForm.phone}
@@ -187,7 +189,7 @@ export default function CustomerIdentity() {
                                             />
                                         </div>
                                         <div className="space-y-3">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Nacimiento</Label>
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('field.dob')}</Label>
                                             <Input
                                                 type="date"
                                                 className="h-14 pl-5 rounded-2xl border-slate-100 bg-slate-50/50 font-bold"
@@ -198,27 +200,27 @@ export default function CustomerIdentity() {
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Dirección Completa</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('field.address')}</Label>
                                         <div className="relative">
                                             <MapPin className="absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
                                             <Input
                                                 className="h-14 pl-5 pr-12 rounded-2xl border-slate-100 bg-slate-50/50 font-bold"
                                                 value={profileForm.addressCityPostal}
                                                 onChange={(e) => setProfileForm(p => ({ ...p, addressCityPostal: e.target.value }))}
-                                                placeholder="Calle, Ciudad, Código Postal"
+                                                placeholder={t('field.address')}
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-3 opacity-50">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">E-mail de Acceso</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('field.email')}</Label>
                                         <Input className="h-14 rounded-2xl border-slate-100 bg-slate-50" value={userData?.email || ''} readOnly />
                                     </div>
                                 </div>
 
                                 <Button type="submit" className="w-full bg-slate-900 hover:bg-black text-white h-16 rounded-[1.5rem] shadow-2xl shadow-slate-200 mt-4 text-sm font-black uppercase tracking-widest" disabled={profileSaving}>
                                     {profileSaving ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : <Save className="mr-2 h-5 w-5" />}
-                                    Actualizar Perfil
+                                    {t('identity.personal.submit')}
                                 </Button>
                             </form>
                         </CardContent>
@@ -234,8 +236,8 @@ export default function CustomerIdentity() {
                                     <ShieldCheck className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-2xl font-black tracking-tight leading-none">Verificación ID</CardTitle>
-                                    <CardDescription>Documentación de seguridad obligatoria.</CardDescription>
+                                    <CardTitle className="text-2xl font-black tracking-tight leading-none">{t('identity.kyc.title')}</CardTitle>
+                                    <CardDescription>{t('identity.kyc.subtitle')}</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
@@ -246,9 +248,9 @@ export default function CustomerIdentity() {
                                         <CheckCircle className="h-12 w-12 text-emerald-600" />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="font-black text-slate-900 text-3xl tracking-tighter">Cuenta Oro Certificada</h3>
+                                        <h3 className="font-black text-slate-900 text-3xl tracking-tighter">{t('identity.kyc.verified.title')}</h3>
                                         <p className="text-slate-500 font-medium max-w-xs leading-relaxed">
-                                            Tu identidad ha sido verificada. Tienes acceso completo a todas las herramientas financieras de Oryxen.
+                                            {t('identity.kyc.verified.subtitle')}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-200/50 text-slate-400 font-black text-[10px] uppercase tracking-widest mt-6">
@@ -262,9 +264,9 @@ export default function CustomerIdentity() {
                                         <Loader2 className="h-10 w-10 text-amber-500 animate-spin" />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="font-black text-slate-900 text-2xl tracking-tight">Estamos Validando</h3>
+                                        <h3 className="font-black text-slate-900 text-2xl tracking-tight">{t('identity.kyc.pending.title')}</h3>
                                         <p className="text-slate-400 text-sm font-medium leading-relaxed">
-                                            Hemos recibido tus archivos. Recibirás una notificación en cuanto el equipo de cumplimiento los valide.
+                                            {t('identity.kyc.pending.subtitle')}
                                         </p>
                                     </div>
                                 </div>
@@ -272,7 +274,7 @@ export default function CustomerIdentity() {
                                 <form onSubmit={(e) => { e.preventDefault(); kycMutation.mutate(); }} className="space-y-8">
                                     {kyc?.status === 'rejected' && (
                                         <div className="p-5 bg-red-50 border border-red-100 rounded-2xl text-center space-y-2">
-                                            <p className="text-xs font-black uppercase text-red-600 tracking-widest">Documento No Válido</p>
+                                            <p className="text-xs font-black uppercase text-red-600 tracking-widest">{t('identity.kyc.rejected.title')}</p>
                                             <p className="text-sm text-red-800 font-bold italic">"{kyc.rejectionReason || "Por favor, vuelve a subir fotos claras de tu ID."}"</p>
                                         </div>
                                     )}
@@ -288,7 +290,7 @@ export default function CustomerIdentity() {
                                                 {frontFile ? <img src={URL.createObjectURL(frontFile)} className="absolute inset-0 w-full h-full object-cover rounded-[1.8rem]" alt="Front preview" /> : (
                                                     <>
                                                         <Camera className="h-8 w-8 text-slate-300 group-hover:text-blue-500 transition-colors" />
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Anverso ID</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('identity.kyc.front')}</span>
                                                     </>
                                                 )}
                                                 <input id="front-file" type="file" accept="image/*" className="hidden" onChange={(e) => setFrontFile(e.target.files?.[0] || null)} />
@@ -303,7 +305,7 @@ export default function CustomerIdentity() {
                                                 {backFile ? <img src={URL.createObjectURL(backFile)} className="absolute inset-0 w-full h-full object-cover rounded-[1.8rem]" alt="Back preview" /> : (
                                                     <>
                                                         <Camera className="h-8 w-8 text-slate-300 group-hover:text-blue-500 transition-colors" />
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reverso ID</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('identity.kyc.back')}</span>
                                                     </>
                                                 )}
                                                 <input id="back-file" type="file" accept="image/*" className="hidden" onChange={(e) => setBackFile(e.target.files?.[0] || null)} />
@@ -318,7 +320,7 @@ export default function CustomerIdentity() {
                                         >
                                             <Upload className={`h-6 w-6 ${selfieFile ? 'text-emerald-600' : 'text-slate-300'}`} />
                                             <div className="text-left">
-                                                <p className="text-xs font-black text-slate-600 uppercase tracking-widest">Selfie con ID</p>
+                                                <p className="text-xs font-black text-slate-600 uppercase tracking-widest">{t('identity.kyc.selfie')}</p>
                                                 <p className="text-[10px] text-slate-400 font-bold uppercase">{selfieFile ? selfieFile.name : "Recomendado para aprobación rápida"}</p>
                                             </div>
                                             <input id="selfie-file" type="file" accept="image/*" className="hidden" onChange={(e) => setSelfieFile(e.target.files?.[0] || null)} />
@@ -332,7 +334,7 @@ export default function CustomerIdentity() {
                                         disabled={uploading || kycMutation.isPending || !frontFile || !backFile}
                                     >
                                         {uploading || kycMutation.isPending ? <Loader2 className="animate-spin mr-3 h-5 w-5" /> : <ShieldCheck className="mr-3 h-5 w-5" />}
-                                        Iniciar Verificación
+                                        {t('identity.kyc.submit')}
                                     </Button>
                                 </form>
                             )}

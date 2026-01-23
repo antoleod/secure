@@ -1,230 +1,178 @@
-import { useEffect, useState, useMemo } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { Collateral, CollateralType } from '@/types';
+import React, { useState } from 'react';
+import { useI18n } from '@/contexts/I18nContext';
 import {
-    Loader2,
-    ShoppingBag,
     Search,
     Filter,
-    Tag,
+    ShoppingBag,
+    Zap,
+    ArrowRight,
+    Star,
+    Check,
+    Info,
     Smartphone,
     Watch,
-    Car,
-    Home,
-    Package,
-    ArrowRight,
-    Sparkles,
-    ShoppingCart,
-    Info
+    Laptop,
+    Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const CATEGORIES: { value: CollateralType | 'all'; label: string; icon: any }[] = [
-    { value: 'all', label: 'Todo', icon: Sparkles },
-    { value: 'electronics', label: 'Electrónica', icon: Smartphone },
-    { value: 'jewelry', label: 'Joyas', icon: Watch },
-    { value: 'vehicle', label: 'Vehículos', icon: Car },
-    { value: 'property', label: 'Propiedades', icon: Home },
-    { value: 'other', label: 'Otros', icon: Package },
-];
-
 export default function CustomerStore() {
-    const [items, setItems] = useState<Collateral[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<CollateralType | 'all'>('all');
+    const { t } = useI18n();
+    const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('all');
 
-    useEffect(() => {
-        async function loadItems() {
-            try {
-                const q = query(collection(db, 'collaterals'), where('isForSale', '==', true));
-                const querySnapshot = await getDocs(q);
-                const data: Collateral[] = [];
-                querySnapshot.forEach((doc) => {
-                    data.push({ id: doc.id, ...doc.data() } as Collateral);
-                });
-                setItems(data);
-            } catch (error) {
-                console.error('Error loading store items:', error);
-            } finally {
-                setLoading(false);
-            }
-        }
-        loadItems();
-    }, []);
+    const products = [
+        { id: 1, name: 'iPhone 15 Pro Max', brand: 'Apple', price: 849, originalPrice: 1329, image: 'https://images.unsplash.com/photo-1696446701796-da61225697cc?q=80&w=800&auto=format&fit=crop', category: 'phones' },
+        { id: 2, name: 'MacBook Pro M3', brand: 'Apple', price: 1450, originalPrice: 1999, image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=800&auto=format&fit=crop', category: 'laptops' },
+        { id: 3, name: 'Sony A7 IV', brand: 'Sony', price: 1200, originalPrice: 2400, image: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=800&auto=format&fit=crop', category: 'cameras' },
+        { id: 4, name: 'iPad Air M2', brand: 'Apple', price: 549, originalPrice: 799, image: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?q=80&w=800&auto=format&fit=crop', category: 'tablets' },
+        { id: 5, name: 'Rolex Datejust', brand: 'Rolex', price: 6500, originalPrice: 9800, image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=800&auto=format&fit=crop', category: 'jewelry' },
+        { id: 6, name: 'PlayStation 5 Slim', brand: 'Sony', price: 349, originalPrice: 549, image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?q=80&w=800&auto=format&fit=crop', category: 'gaming' },
+    ];
 
-    const filteredItems = useMemo(() => {
-        return items.filter(item => {
-            const matchesSearch = (item.publicTitle || item.brandModel || '').toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesCategory = selectedCategory === 'all' || item.type === selectedCategory;
-            return matchesSearch && matchesCategory;
-        });
-    }, [items, searchTerm, selectedCategory]);
+    const categories = [
+        { id: 'all', label: 'Todos' },
+        { id: 'phones', label: 'Móviles' },
+        { id: 'laptops', label: 'Laptops' },
+        { id: 'jewelry', label: 'Lujo' },
+    ];
+
+    const filtered = products.filter(p =>
+        (p.name.toLowerCase().includes(search.toLowerCase()) || p.brand.toLowerCase().includes(search.toLowerCase())) &&
+        (category === 'all' || p.category === category)
+    );
 
     return (
-        <div className="space-y-12 pb-32 font-sans overflow-x-hidden animate-in fade-in duration-700">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-                <div className="max-w-2xl">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="flex items-center gap-2 text-blue-600 mb-2"
-                    >
-                        <ShoppingCart className="h-5 w-5" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.4em]">Oryxen Marketplace</span>
-                    </motion.div>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-tight">Ventas por Tasación</h1>
-                    <p className="text-slate-500 mt-4 text-lg leading-relaxed max-w-xl">
-                        Adquiere activos de lujo y tecnología punta procedentes de liquidaciones. Calidad certificada y precios por debajo del mercado.
-                    </p>
-                </div>
-
+        <div className="max-w-7xl mx-auto space-y-12 pb-32 animate-in fade-in duration-700">
+            {/* Header Hero */}
+            <div className="relative rounded-[4rem] bg-indigo-600 p-12 md:p-20 overflow-hidden text-white shadow-2xl shadow-indigo-100">
+                <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-950/20 skew-x-12 translate-x-20" />
                 <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="relative w-full md:w-96 group"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="relative z-10 max-w-2xl"
                 >
-                    <div className="absolute inset-0 bg-blue-100/5 group-hover:bg-blue-100/20 blur-xl transition-all duration-700 rounded-full" />
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 z-10" />
-                    <Input
-                        placeholder="Buscar por marca o modelo..."
-                        className="pl-12 h-14 rounded-3xl border-slate-100 bg-white shadow-xl shadow-slate-200/50 relative z-10 font-bold focus:ring-blue-500 transition-all"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                    <div className="flex items-center gap-2 mb-6 font-black uppercase tracking-[0.4em] text-xs text-indigo-200">
+                        <Zap className="h-4 w-4 fill-indigo-300 text-indigo-300" />
+                        <span>{t('store.opportunity')}</span>
+                    </div>
+                    <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.9] mb-8">
+                        {t('store.marketplace.title')}
+                    </h1>
+                    <p className="text-indigo-100 text-lg md:text-xl font-medium max-w-lg leading-relaxed mb-10">
+                        {t('store.marketplace.subtitle')}
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-indigo-300" />
+                            <Input
+                                className="h-16 pl-12 bg-white/10 border-white/20 text-white placeholder:text-indigo-200 rounded-2xl focus:ring-white/30 transition-all font-bold"
+                                placeholder={t('store.search.placeholder')}
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                            />
+                        </div>
+                    </div>
                 </motion.div>
-            </div>
 
-            {/* Filter Pills */}
-            <div className="flex items-center gap-3 overflow-x-auto pb-6 no-scrollbar">
-                {CATEGORIES.map((cat, idx) => (
-                    <motion.button
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        key={cat.value}
-                        onClick={() => setSelectedCategory(cat.value)}
-                        className={`flex items-center gap-2 px-6 py-3.5 rounded-[1.5rem] text-[11px] font-black uppercase tracking-widest transition-all whitespace-nowrap active:scale-95 border ${selectedCategory === cat.value
-                                ? 'bg-slate-900 text-white border-slate-900 shadow-2xl shadow-slate-300'
-                                : 'bg-white text-slate-500 border-slate-100 hover:border-blue-200 hover:text-blue-600'
-                            }`}
+                {/* Floating elements */}
+                <div className="absolute bottom-10 right-10 hidden lg:block">
+                    <motion.div
+                        animate={{ y: [0, -15, 0] }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                        className="bg-white/10 backdrop-blur-xl p-8 rounded-[3rem] border border-white/20"
                     >
-                        <cat.icon className="h-4 w-4" />
-                        {cat.label}
-                    </motion.button>
-                ))}
+                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-xl mb-4">
+                            <ShoppingBag className="h-8 w-8" />
+                        </div>
+                        <p className="text-3xl font-black tracking-tighter italic">Oryxen Store</p>
+                    </motion.div>
+                </div>
             </div>
 
-            <AnimatePresence mode="wait">
-                {loading ? (
-                    <div key="loading" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                        {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                            <div key={i} className="space-y-4">
-                                <Skeleton className="h-64 w-full rounded-[2.5rem]" />
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-4 w-1/2" />
-                            </div>
+            {/* Main Content */}
+            <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                    <div className="flex gap-2">
+                        {categories.map(c => (
+                            <button
+                                key={c.id}
+                                onClick={() => setCategory(c.id)}
+                                className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${category === c.id ? 'bg-slate-900 text-white shadow-xl' : 'bg-white border border-slate-100 text-slate-400 hover:bg-slate-50'
+                                    }`}
+                            >
+                                {c.label}
+                            </button>
                         ))}
                     </div>
-                ) : filteredItems.length === 0 ? (
-                    <motion.div
-                        key="empty"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="text-center py-32 bg-white rounded-[4rem] border border-dashed border-slate-200"
-                    >
-                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                            <Info className="h-10 w-10" />
-                        </div>
-                        <h3 className="text-2xl font-black text-slate-800">Sin resultados</h3>
-                        <p className="text-slate-400 max-w-sm mx-auto mt-2 text-base leading-relaxed">
-                            No hemos encontrado artículos que coincidan con tu búsqueda. Intenta con otra categoría o término.
-                        </p>
-                        <Button onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }} variant="link" className="mt-6 text-blue-600 font-black uppercase tracking-widest text-xs">Mostrar catálogo completo</Button>
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="results"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 lg:gap-10"
-                    >
-                        {filteredItems.map((item, idx) => (
+                    <Button variant="ghost" className="rounded-full text-slate-400 gap-2 font-black uppercase tracking-widest text-[10px]">
+                        <Filter className="h-4 w-4" />
+                        Filtrar
+                    </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <AnimatePresence>
+                        {filtered.length > 0 ? filtered.map((item, idx) => (
                             <motion.div
                                 layout
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: idx * 0.03 }}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: idx * 0.05 }}
                                 key={item.id}
-                                className="group flex flex-col bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-[0_40px_100px_rgba(0,0,0,0.08)] transition-all duration-700 overflow-hidden h-full"
+                                className="bg-white rounded-[3rem] border border-slate-100 shadow-sm overflow-hidden group hover:shadow-2xl hover:shadow-slate-200 transition-all duration-700 hover:-translate-y-2"
                             >
-                                <div className="aspect-square relative overflow-hidden bg-slate-50">
-                                    {item.photosRefs && item.photosRefs.length > 0 ? (
-                                        <img
-                                            src={item.photosRefs[0]}
-                                            alt={item.publicTitle || item.brandModel}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 gap-4 opacity-30">
-                                            <Package className="h-16 w-16" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">Multimedia pendiente</span>
-                                        </div>
-                                    )}
-
-                                    {/* Category Badge on Image */}
-                                    <div className="absolute top-6 left-6">
-                                        <span className="bg-white/80 backdrop-blur-md text-slate-900 text-[9px] font-black px-4 py-2 rounded-full shadow-lg tracking-widest uppercase ring-1 ring-slate-900/5">
-                                            {CATEGORIES.find(c => c.value === item.type)?.label || 'Artículo'}
-                                        </span>
+                                <div className="aspect-[3/4] p-4 relative">
+                                    <div className="absolute top-8 left-8 z-10">
+                                        <span className="bg-rose-500 text-white text-[9px] font-black px-4 py-2 rounded-full uppercase tracking-tighter shadow-lg shadow-rose-500/30">-{Math.round((1 - item.price / item.originalPrice) * 100)}% DCTO</span>
                                     </div>
-
-                                    {/* Quick Link Overlay */}
-                                    <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/20 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                                        <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-slate-900 shadow-xl ml-auto">
-                                            <ArrowRight className="h-5 w-5" />
+                                    <div className="w-full h-full bg-slate-50 rounded-[2.5rem] overflow-hidden">
+                                        <img src={item.image} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" alt={item.name} />
+                                    </div>
+                                    <div className="absolute bottom-8 right-8">
+                                        <div className="w-14 h-14 bg-white/80 backdrop-blur-md rounded-2xl flex items-center justify-center text-slate-900 shadow-xl opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-500">
+                                            <ShoppingBag className="h-6 w-6" />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="p-8 flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <div className="flex items-center gap-1.5 text-[9px] font-black tracking-[0.2em] text-blue-600 uppercase mb-3">
-                                            <Sparkles className="h-3 w-3" />
-                                            <span>Oportunidad Exclusiva</span>
-                                        </div>
-                                        <h3 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 tracking-tight">
-                                            {item.publicTitle || item.brandModel}
-                                        </h3>
-                                        <p className="text-sm text-slate-500 mt-3 line-clamp-2 leading-relaxed h-10">
-                                            {item.publicDescription || 'Consultar detalles técnicos del artículo con un agente.'}
-                                        </p>
+                                <CardContent className="p-10 pt-0">
+                                    <div className="flex items-center gap-2 text-indigo-500 mb-2">
+                                        <Star className="h-3 w-3 fill-indigo-500" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{item.brand}</span>
                                     </div>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-6 group-hover:text-indigo-600 transition-colors">{item.name}</h3>
 
-                                    <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-100">
-                                        <div className="flex flex-col">
-                                            <span className="text-[9px] text-slate-400 font-extrabold uppercase tracking-widest mb-1 leading-none">Precio Liquidado</span>
-                                            <span className="text-3xl font-black text-slate-900 tracking-tighter">
-                                                {item.salePriceCents ? (item.salePriceCents / 100).toLocaleString('es-ES') : '??'}€
-                                            </span>
+                                    <div className="flex items-end justify-between border-t border-slate-50 pt-8 mt-2">
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('store.liquidatedPrice')}</p>
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-3xl font-black text-slate-900 tracking-tighter italic font-mono">{item.price}€</span>
+                                                <span className="text-sm font-bold text-slate-300 line-through italic">{item.originalPrice}€</span>
+                                            </div>
                                         </div>
-                                        <motion.div whileTap={{ scale: 0.9 }}>
-                                            <Button className="bg-slate-900 hover:bg-black rounded-2xl px-6 h-12 text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-100">
-                                                Comprar
-                                            </Button>
-                                        </motion.div>
+                                        <Button className="bg-slate-900 hover:bg-slate-800 text-white rounded-2xl px-8 h-12 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-slate-200">
+                                            {t('store.buy')}
+                                        </Button>
                                     </div>
-                                </div>
+                                </CardContent>
                             </motion.div>
-                        ))}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        )) : (
+                            <div className="col-span-full py-40 text-center space-y-4">
+                                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-300">
+                                    <Search className="h-10 w-10" />
+                                </div>
+                                <h3 className="text-3xl font-black text-slate-900 tracking-tight">{t('store.empty.title')}</h3>
+                                <p className="text-slate-400 font-medium">{t('store.empty.subtitle')}</p>
+                            </div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
         </div>
     );
 }

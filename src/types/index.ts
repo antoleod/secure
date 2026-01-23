@@ -100,9 +100,11 @@ export interface Loan {
     // Financials
     principalCents: number;
     outstandingCents: number;
+    interestRate: number; // Annual rate (%)
 
     // Terms
     startDate: Timestamp;
+    nextDueDate?: Timestamp;
     cutoffHour: number;
     businessDaysOnly: boolean;
     maxDurationMonths: number;
@@ -110,6 +112,7 @@ export interface Loan {
 
     // References
     collateralId: string;
+    collateralRefs?: string[]; // Array of collateral IDs if multiple
 
     // Default/Sale/Surrender info
     surrenderRequested?: boolean;
@@ -205,6 +208,7 @@ export interface LoyaltyStatus {
     affiliateStatus: boolean;
     freezeUntil?: Timestamp;
     tier: 'standard' | 'bronze' | 'silver' | 'gold';
+    creditLimitCents?: number;
     createdAt: Timestamp;
     updatedAt: Timestamp;
 }

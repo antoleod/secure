@@ -47,16 +47,16 @@ export function AdminLayout() {
     }
 
     const navigationLinks = [
-        { to: '/admin', label: 'Monitor', icon: LayoutDashboard },
-        { to: '/admin/requests', label: 'Solicitudes', icon: FileText },
-        { to: '/admin/loans', label: 'Contratos', icon: Wallet },
-        { to: '/admin/payments', label: 'Cobros', icon: CreditCard },
-        { to: '/admin/clients', label: 'Directorio', icon: Users },
+        { to: '/admin', label: t('nav.dashboard'), icon: LayoutDashboard },
+        { to: '/admin/requests', label: t('nav.requests'), icon: FileText },
+        { to: '/admin/loans', label: t('nav.loans'), icon: Wallet },
+        { to: '/admin/payments', label: t('nav.payments'), icon: CreditCard },
+        { to: '/admin/clients', label: t('nav.clients'), icon: Users },
     ];
 
     const secondaryLinks = [
-        { to: '/admin/audit', label: 'Auditoría', icon: History },
-        { to: '/admin/settings', label: 'Sistema', icon: Settings },
+        { to: '/admin/audit', label: t('nav.audit'), icon: History },
+        { to: '/admin/settings', label: t('nav.settings'), icon: Settings },
     ];
 
     const isActive = (path: string) => location.pathname === path;
