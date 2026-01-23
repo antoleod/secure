@@ -1,19 +1,29 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   User,
+  onAuthStateChanged,
+  signOut as firebaseSignOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  signOut as firebaseSignOut,
   sendPasswordResetEmail,
-  onAuthStateChanged,
-  AuthError
+  AuthError,
 } from 'firebase/auth';
-import { auth, initializationError } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
-interface AuthContextType {
+export interface UserData {
+  uid: string;
+  email: string;
+  role: 'admin' | 'customer';
+  [key: string]: any;
+}
+
+export interface AuthContextType {
   user: User | null;
+  currentUser: User | null;
+  userData: UserData | null;
   loading: boolean;
   error: string | null;
   signInEmail: (email: string, pass: string) => Promise<void>;
@@ -21,34 +31,55 @@ interface AuthContextType {
   signInGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  logout: () => Promise<void>;
   clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(initializationError ? initializationError.message : null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setUser(user);
+      if (user) {
+        try {
+          const docRef = doc(db, 'users', user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUserData(docSnap.data() as UserData);
+          } else {
+            setUserData(null);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setUserData(null);
+        }
+      } else {
+        setUserData(null);
+      }
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return unsubscribe;
   }, []);
 
   const handleError = (err: unknown) => {
     const firebaseError = err as AuthError;
     console.error('Auth Error:', firebaseError.code, firebaseError.message);
-    
+
     switch (firebaseError.code) {
       case 'auth/invalid-email':
         setError('El correo electrónico no es válido.');
@@ -76,7 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInEmail = async (email: string, pass: string) => {
-    if (!auth) return;
     setError(null);
     try {
       await signInWithEmailAndPassword(auth, email, pass);
@@ -87,7 +117,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUpEmail = async (email: string, pass: string) => {
-    if (!auth) return;
     setError(null);
     try {
       await createUserWithEmailAndPassword(auth, email, pass);
@@ -98,7 +127,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInGoogle = async () => {
-    if (!auth) return;
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
@@ -110,7 +138,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
-    if (!auth) return;
     setError(null);
     try {
       await sendPasswordResetEmail(auth, email);
@@ -120,26 +147,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signOut = async () => {
-    if (!auth) return;
-    try {
-      await firebaseSignOut(auth);
-    } catch (err) {
-      handleError(err);
-    }
+  const signOut = () => {
+    return firebaseSignOut(auth);
   };
+
+  // Legacy alias for components still consuming the older API
+  const logout = () => signOut();
 
   const clearError = () => setError(null);
 
+  const value = {
+    user,
+    currentUser: user,
+    userData,
+    loading,
+    error,
+    signInEmail,
+    signUpEmail,
+    signInGoogle,
+    resetPassword,
+    signOut,
+    logout,
+    clearError,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, signInEmail, signUpEmail, signInGoogle, resetPassword, signOut, clearError }}>
-      {children}
+    <AuthContext.Provider value={value}>
+      {!loading && children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
-  return context;
 }
