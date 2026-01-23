@@ -40,6 +40,11 @@ export default function CustomerPayments() {
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
+    const paymentMethods: Array<{ id: Payment['method']; label: string }> = [
+        { id: 'bank_transfer', label: t('payments.method.bank_transfer') },
+        { id: 'cash', label: t('payments.method.cash') }
+    ];
+
     const { data: loans } = useQuery({
         queryKey: ['loans', user?.uid],
         queryFn: () => listLoansForUser(user!.uid),
@@ -155,10 +160,7 @@ export default function CustomerPayments() {
                                 <div className="space-y-3">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('field.paymentMethod')}</Label>
                                     <div className="grid grid-cols-2 gap-3">
-                                        {[
-                                            { id: 'bank_transfer', label: t('payments.method.bank_transfer') },
-                                            { id: 'cash', label: t('payments.method.cash') }
-                                        ].map(m => (
+                                        {paymentMethods.map(m => (
                                             <button
                                                 key={m.id}
                                                 type="button"

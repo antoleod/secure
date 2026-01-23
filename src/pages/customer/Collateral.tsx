@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { listCollaterals, registerCollateralWithRefs, uploadFile } from '@/lib/firestoreClient';
 import { useI18n } from '@/contexts/I18nContext';
-import { Collateral } from '@/types';
+import { Collateral, CollateralType } from '@/types';
 import {
     Plus,
     Smartphone,
@@ -17,7 +17,8 @@ import {
     Trash2,
     Image as ImageIcon,
     ArrowUpRight,
-    ShieldCheck
+    ShieldCheck,
+    type LucideIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,7 +84,11 @@ export default function CustomerCollateral() {
         },
     });
 
-    const categories = [
+    const categories: Array<{
+        id: CollateralType;
+        label: string;
+        icon: LucideIcon;
+    }> = [
         { id: 'electronics', label: t('collateral.type.electronics'), icon: Smartphone },
         { id: 'jewelry', label: t('collateral.type.jewelry'), icon: Watch },
         { id: 'vehicle', label: t('collateral.type.vehicle'), icon: Car },
