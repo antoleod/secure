@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { listCollaterals, registerCollateralWithRefs, uploadFile } from '@/lib/firestoreClient';
+import { ENABLE_UPLOADS } from '@/lib/firebase';
 import { useI18n } from '@/contexts/I18nContext';
 import { Collateral, CollateralType } from '@/types';
 import {
@@ -33,6 +34,7 @@ export default function CustomerCollateral() {
     const queryClient = useQueryClient();
     const { t } = useI18n();
     const [isAdding, setIsAdding] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
     // Form state
     const [form, setForm] = useState<CollateralForm>({
@@ -54,13 +56,22 @@ export default function CustomerCollateral() {
     const mutation = useMutation({
         mutationFn: async () => {
             if (!user) return;
+            setErrorMsg(null);
+            if (photos.length === 0 && ENABLE_UPLOADS) {
+                setErrorMsg('Agrega al menos 1 foto para poder continuar.');
+                return;
+            }
             setLoading(true);
             try {
-                // Upload photos and get URLs
                 const photosRefs: string[] = [];
-                for (const photo of photos) {
-                    const url = await uploadFile(`collaterals/${user.uid}/${Date.now()}-${photo.name}`, photo);
-                    if (url) photosRefs.push(url);
+
+                if (ENABLE_UPLOADS && photos.length > 0) {
+                    const timestamp = Date.now();
+                    const uploads = photos.map((photo, idx) =>
+                        uploadFile(`collaterals/${user.uid}/${timestamp}-${idx}-${photo.name}`, photo)
+                    );
+                    const uploaded = await Promise.all(uploads);
+                    uploaded.filter(Boolean).forEach((url) => photosRefs.push(url as string));
                 }
 
                 const newCollateral: Omit<Collateral, 'id' | 'ownerUid' | 'status' | 'createdAt' | 'updatedAt'> = {
@@ -72,6 +83,9 @@ export default function CustomerCollateral() {
                 };
 
                 await registerCollateralWithRefs(user.uid, newCollateral);
+            } catch (err) {
+                console.error(err);
+                setErrorMsg('No pudimos guardar la prenda. Verifica tu conexión y los permisos de almacenamiento.');
             } finally {
                 setLoading(false);
             }
@@ -88,13 +102,13 @@ export default function CustomerCollateral() {
         id: CollateralType;
         label: string;
         icon: LucideIcon;
-    }> = [
+    }> = useMemo(() => ([
         { id: 'electronics', label: t('collateral.type.electronics'), icon: Smartphone },
         { id: 'jewelry', label: t('collateral.type.jewelry'), icon: Watch },
         { id: 'vehicle', label: t('collateral.type.vehicle'), icon: Car },
         { id: 'property', label: t('collateral.type.property'), icon: Home },
         { id: 'other', label: t('collateral.type.other'), icon: Package },
-    ];
+    ]), [t]);
 
     if (isLoading) return (
         <div className="space-y-6">
@@ -111,7 +125,7 @@ export default function CustomerCollateral() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
-                    <div className="flex items-center gap-2 text-blue-600 mb-2">
+                    <div className="flex items-center gap-2 text-emerald-600 mb-2">
                         <Package className="h-5 w-5" />
                         <span className="text-[10px] font-black uppercase tracking-[0.4em]">{t('collateral.manage.label')}</span>
                     </div>
@@ -119,7 +133,7 @@ export default function CustomerCollateral() {
                     <p className="text-slate-500 mt-4 text-lg max-w-md">{t('collateral.manage.subtitle')}</p>
                 </div>
                 {!isAdding && (
-                    <Button onClick={() => setIsAdding(true)} className="bg-slate-900 hover:bg-black text-white h-16 px-8 rounded-[1.5rem] shadow-2xl shadow-slate-200 text-sm font-black uppercase tracking-widest transition-all active:scale-95">
+                    <Button onClick={() => setIsAdding(true)} className="bg-[#0f3d5c] hover:bg-[#0d3049] text-white h-16 px-8 rounded-[1.5rem] shadow-2xl shadow-emerald-200 text-sm font-black uppercase tracking-widest transition-all active:scale-95">
                         <Plus className="mr-2 h-5 w-5" />
                         {t('collateral.add.cta')}
                     </Button>
@@ -141,6 +155,16 @@ export default function CustomerCollateral() {
                                 <p className="text-slate-400 font-medium mb-10">{t('collateral.form.subtitle')}</p>
 
                                 <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
+                                    {(!ENABLE_UPLOADS) && (
+                                        <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 text-sm font-semibold px-4 py-3">
+                                            Subida de fotos deshabilitada. Activa <code className="font-mono text-xs">VITE_ENABLE_UPLOADS=true</code> y configura Firebase Storage para adjuntar imágenes.
+                                        </div>
+                                    )}
+                                    {errorMsg && (
+                                        <div className="rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold px-4 py-3">
+                                            {errorMsg}
+                                        </div>
+                                    )}
                                     <div className="space-y-3">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.category')}</Label>
                                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -149,7 +173,7 @@ export default function CustomerCollateral() {
                                                     key={cat.id}
                                                     type="button"
                                                     onClick={() => setForm({ ...form, type: cat.id })}
-                                                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2 ${form.type === cat.id ? 'border-blue-600 bg-blue-50/50 text-blue-600' : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200'
+                                                    className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2 ${form.type === cat.id ? 'border-emerald-500 bg-emerald-50/60 text-emerald-700' : 'border-slate-100 bg-slate-50/50 text-slate-400 hover:border-slate-200'
                                                         }`}
                                                 >
                                                     <cat.icon className="h-6 w-6" />
@@ -185,7 +209,7 @@ export default function CustomerCollateral() {
 
                                     <div className="flex gap-4 pt-4">
                                         <Button variant="outline" type="button" onClick={() => setIsAdding(false)} className="flex-1 h-14 rounded-2xl border-slate-200 text-[10px] font-black uppercase tracking-widest">{t('common.cancel')}</Button>
-                                        <Button className="flex-[2] h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-100" disabled={loading || mutation.isPending}>
+                                        <Button className="flex-[2] h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-100" disabled={loading || mutation.isPending}>
                                             {loading || mutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
                                             {t('collateral.form.submit')}
                                         </Button>
@@ -206,17 +230,17 @@ export default function CustomerCollateral() {
                                         </div>
                                     ))}
                                     {photos.length < 6 && (
-                                        <label className="aspect-square bg-white border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 group transition-all">
-                                            <Camera className="h-8 w-8 text-slate-300 group-hover:text-blue-500 transition-transform group-hover:scale-110" />
+                                        <label className="aspect-square bg-white border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-emerald-400 group transition-all">
+                                            <Camera className="h-8 w-8 text-slate-300 group-hover:text-emerald-500 transition-transform group-hover:scale-110" />
                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('collateral.form.addPhoto')}</span>
-                                            <input type="file" className="hidden" accept="image/*" onChange={e => e.target.files && setPhotos([...photos, e.target.files[0]])} />
+                                            <input type="file" className="hidden" accept="image/*" multiple onChange={e => e.target.files && setPhotos([...photos, ...Array.from(e.target.files)])} />
                                         </label>
                                     )}
                                 </div>
-                                <div className="mt-12 p-6 bg-blue-600 rounded-[2rem] text-white">
+                                <div className="mt-12 p-6 bg-[#0f3d5c] rounded-[2rem] text-white">
                                     <ShieldCheck className="h-8 w-8 mb-4" />
-                                    <h4 className="font-black text-lg leading-tight mb-2">Protocolo de Custodia Oryxen Secure</h4>
-                                    <p className="text-xs text-blue-100 font-medium leading-relaxed">Sus pertenencias se almacenan en bóvedas de alta seguridad con control climático y vigilancia 24/7. Están 100% aseguradas contra todo riesgo.</p>
+                                    <h4 className="font-black text-lg leading-tight mb-2">Protocolo de Custodia Secure</h4>
+                                    <p className="text-xs text-emerald-100 font-medium leading-relaxed">Sus pertenencias se almacenan en bóvedas de alta seguridad con control climático y vigilancia 24/7. Están 100% aseguradas contra todo riesgo.</p>
                                 </div>
                             </div>
                         </div>
@@ -232,7 +256,7 @@ export default function CustomerCollateral() {
                                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">{t('collateral.list.empty.title')}</h3>
                                     <p className="text-slate-400 mt-2 font-medium">{t('collateral.list.empty.subtitle')}</p>
                                 </div>
-                                <Button onClick={() => setIsAdding(true)} variant="link" className="text-blue-600 font-black uppercase tracking-widest text-[10px]">{t('collateral.add.cta')}</Button>
+                                <Button onClick={() => setIsAdding(true)} variant="link" className="text-emerald-700 font-black uppercase tracking-widest text-[10px]">{t('collateral.add.cta')}</Button>
                             </div>
                         ) : (
                             items?.map((item, idx) => (
@@ -260,7 +284,7 @@ export default function CustomerCollateral() {
                                         </div>
                                     </div>
                                     <div className="p-8">
-                                        <div className="flex items-center gap-2 text-blue-600 mb-2">
+                                        <div className="flex items-center gap-2 text-emerald-700 mb-2">
                                             {categories.find(c => c.id === item.type)?.icon && React.createElement(categories.find(c => c.id === item.type)!.icon, { className: "h-3 w-3" })}
                                             <span className="text-[9px] font-black uppercase tracking-widest">{t(`collateral.type.${item.type}`)}</span>
                                         </div>
@@ -273,7 +297,7 @@ export default function CustomerCollateral() {
                                                 <p className="text-xl font-black text-slate-900 tracking-tighter italic">{(item.estimatedValue / 100).toLocaleString('es-ES')}€</p>
                                             </div>
                                             <Link to="/app/new-loan">
-                                                <Button size="icon" className="w-12 h-12 rounded-2xl bg-slate-900 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all duration-500">
+                                                <Button size="icon" className="w-12 h-12 rounded-2xl bg-slate-900 hover:bg-[#0f3d5c] hover:shadow-xl hover:shadow-emerald-200 transition-all duration-500">
                                                     <ArrowUpRight className="h-5 w-5" />
                                                 </Button>
                                             </Link>

@@ -21,7 +21,7 @@ const [host, portString] = emulatorHost ? emulatorHost.replace('http://', '').sp
     beforeAll(async () => {
         // Inicializa el entorno de pruebas conectado al emulador local
         testEnv = await initializeTestEnvironment({
-            projectId: 'demo-secure-oryxen',
+            projectId: 'demo-secure-platform',
             firestore: emulatorHost ? {
                 rules,
                 host,

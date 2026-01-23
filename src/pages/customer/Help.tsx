@@ -107,7 +107,7 @@ export default function CustomerHelp() {
                                 </div>
                                 <div>
                                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('support.contact.email')}</p>
-                                    <p className="font-bold text-lg">hola@oryxen.tech</p>
+                                    <p className="font-bold text-lg">hola@secure.tech</p>
                                 </div>
                             </div>
                             <div className="flex items-start gap-4">

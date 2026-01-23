@@ -2,7 +2,7 @@
 
 ## Reporte de vulnerabilidades
 - No abras issues públicos para incidentes de seguridad.
-- Envía un correo a `security@oryxen.tech` con: descripción, pasos para reproducir, impacto y cualquier log relevante sin credenciales.
+- Envía un correo a `security@secure.tech` con: descripción, pasos para reproducir, impacto y cualquier log relevante sin credenciales.
 - Incluye un medio de contacto para coordinar el seguimiento.
 
 ### Flujo de respuesta

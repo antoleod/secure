@@ -41,29 +41,29 @@ export default function CustomerStore() {
     return (
         <div className="max-w-7xl mx-auto space-y-12 pb-32 animate-in fade-in duration-700">
             {/* Header Hero */}
-            <div className="relative rounded-[4rem] bg-indigo-600 p-12 md:p-20 overflow-hidden text-white shadow-2xl shadow-indigo-100">
+            <div className="relative rounded-[4rem] bg-gradient-to-br from-[#0f3d5c] to-emerald-500 p-12 md:p-20 overflow-hidden text-white shadow-2xl shadow-emerald-200/20">
                 <div className="absolute top-0 right-0 w-1/3 h-full bg-slate-950/20 skew-x-12 translate-x-20" />
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="relative z-10 max-w-2xl"
                 >
-                    <div className="flex items-center gap-2 mb-6 font-black uppercase tracking-[0.4em] text-xs text-indigo-200">
-                        <Zap className="h-4 w-4 fill-indigo-300 text-indigo-300" />
+                    <div className="flex items-center gap-2 mb-6 font-black uppercase tracking-[0.4em] text-xs text-emerald-100">
+                        <Zap className="h-4 w-4 fill-emerald-200 text-emerald-200" />
                         <span>{t('store.opportunity')}</span>
                     </div>
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-[0.9] mb-8">
                         {t('store.marketplace.title')}
                     </h1>
-                    <p className="text-indigo-100 text-lg md:text-xl font-medium max-w-lg leading-relaxed mb-10">
+                    <p className="text-emerald-50 text-lg md:text-xl font-medium max-w-lg leading-relaxed mb-10">
                         {t('store.marketplace.subtitle')}
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4">
                         <div className="relative flex-1">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-indigo-300" />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-emerald-200" />
                             <Input
-                                className="h-16 pl-12 bg-white/10 border-white/20 text-white placeholder:text-indigo-200 rounded-2xl focus:ring-white/30 transition-all font-bold"
+                                className="h-16 pl-12 bg-white/10 border-white/20 text-white placeholder:text-emerald-100 rounded-2xl focus:ring-emerald-200/50 transition-all font-bold"
                                 placeholder={t('store.search.placeholder')}
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
@@ -79,10 +79,10 @@ export default function CustomerStore() {
                         transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
                         className="bg-white/10 backdrop-blur-xl p-8 rounded-[3rem] border border-white/20"
                     >
-                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-indigo-600 shadow-xl mb-4">
+                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-xl mb-4">
                             <ShoppingBag className="h-8 w-8" />
                         </div>
-                        <p className="text-3xl font-black tracking-tighter italic">Oryxen Store</p>
+                        <p className="text-3xl font-black tracking-tighter italic">Secure Store</p>
                     </motion.div>
                 </div>
             </div>
@@ -134,11 +134,11 @@ export default function CustomerStore() {
                                 </div>
 
                                 <CardContent className="p-10 pt-0">
-                                    <div className="flex items-center gap-2 text-indigo-500 mb-2">
-                                        <Star className="h-3 w-3 fill-indigo-500" />
+                                    <div className="flex items-center gap-2 text-emerald-500 mb-2">
+                                        <Star className="h-3 w-3 fill-emerald-500" />
                                         <span className="text-[10px] font-black uppercase tracking-widest">{item.brand}</span>
                                     </div>
-                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-6 group-hover:text-indigo-600 transition-colors">{item.name}</h3>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none mb-6 group-hover:text-emerald-600 transition-colors">{item.name}</h3>
 
                                     <div className="flex items-end justify-between border-t border-slate-50 pt-8 mt-2">
                                         <div>

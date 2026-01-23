@@ -25,7 +25,7 @@ if (shouldSkip) {
         const rules = readFileSync(rulesPath, 'utf8');
 
         testEnv = await initializeTestEnvironment({
-            projectId: 'oryxentech-test',
+            projectId: 'securetech-test',
             firestore: {
                 rules,
                 host,

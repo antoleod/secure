@@ -71,7 +71,7 @@ export default function CustomerDashboard() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <p className="text-blue-600 font-black uppercase tracking-[0.3em] text-[10px] mb-2">{greeting}</p>
+                    <p className="text-emerald-600 font-black uppercase tracking-[0.3em] text-[10px] mb-2">{greeting}</p>
                     <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none">
                         {t('dashboard.hello', { name: userData?.fullName?.split(' ')[0] || '' })}
                     </h1>
@@ -102,7 +102,7 @@ export default function CustomerDashboard() {
                 {/* Total debt card */}
                 <motion.div whileHover={{ y: -5 }} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-slate-100">
                     <div className="flex items-center justify-between mb-6">
-                        <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                        <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center text-emerald-600">
                             <Wallet className="h-6 w-6" />
                         </div>
                         <TrendingUp className="h-5 w-5 text-slate-200" />
@@ -116,7 +116,7 @@ export default function CustomerDashboard() {
                 {/* Estimated Limit */}
                 <motion.div whileHover={{ y: -5 }} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-slate-100">
                     <div className="flex items-center justify-between mb-6">
-                        <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                        <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
                             <Gem className="h-6 w-6" />
                         </div>
                         <ArrowUpRight className="h-5 w-5 text-slate-200" />
@@ -127,16 +127,16 @@ export default function CustomerDashboard() {
                     </h3>
                 </motion.div>
 
-                {/* Status Oryxen */}
-                <motion.div whileHover={{ y: -5 }} className="bg-slate-950 p-8 rounded-[2.5rem] shadow-2xl shadow-indigo-200 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-1000" />
+                {/* Status Secure */}
+                <motion.div whileHover={{ y: -5 }} className="bg-slate-950 p-8 rounded-[2.5rem] shadow-2xl shadow-emerald-200 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-emerald-500/20 transition-all duration-1000" />
                     <div className="flex items-center justify-between mb-6 relative z-10">
-                        <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400">
+                        <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-300">
                             <Trophy className="h-6 w-6" />
                         </div>
-                        <span className="bg-indigo-500 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg shadow-indigo-500/40">VIP</span>
+                        <span className="bg-emerald-400 text-slate-900 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-tighter shadow-lg shadow-emerald-300/40">VIP</span>
                     </div>
-                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 relative z-10">{t('dashboard.status.oryxen')}</p>
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1 relative z-10">{t('dashboard.status.secure')}</p>
                     <h3 className="text-2xl font-black text-white tracking-tight relative z-10 uppercase italic">
                         {loyaltyLoading ? <Skeleton className="h-8 w-24 bg-slate-800" /> : (loyalty?.tier || 'Gold Member')}
                     </h3>
@@ -157,28 +157,28 @@ export default function CustomerDashboard() {
                                 </div>
                                 <div>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">{t('dashboard.identity.status')}</p>
-                                    <p className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                                    <p className="text-sm font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
                                         {kycLoading ? t('common.loading') : (kyc?.status === 'verified' ? t('dashboard.identity.verified') : (kyc?.status === 'pending' ? t('dashboard.identity.pending') : t('dashboard.identity.complete')))}
                                     </p>
                                 </div>
                             </div>
-                            <ChevronRight className="h-4 w-4 text-slate-200 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
+                            <ChevronRight className="h-4 w-4 text-slate-200 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
                         </motion.div>
                     </Link>
 
                     {/* Help Support */}
                     <Link to="/app/help">
-                        <motion.div whileHover={{ scale: 1.02 }} className="bg-blue-600 p-8 rounded-[2rem] text-white relative overflow-hidden group">
+                        <motion.div whileHover={{ scale: 1.02 }} className="bg-gradient-to-br from-[#0f3d5c] to-emerald-500 p-8 rounded-[2rem] text-white relative overflow-hidden group">
                             <div className="relative z-10">
                                 <h4 className="text-xl font-black tracking-tight">{t('dashboard.help.title')}</h4>
-                                <p className="text-blue-200 text-sm mt-1 mb-6 font-bold">{t('dashboard.help.subtitle')}</p>
+                                <p className="text-emerald-100 text-sm mt-1 mb-6 font-bold">{t('dashboard.help.subtitle')}</p>
                                 <div className="flex -space-x-3 overflow-hidden mb-6">
                                     {[1, 2, 3].map(i => (
-                                        <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-blue-600 bg-blue-100 border border-blue-200 flex items-center justify-center overflow-hidden">
+                                        <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-emerald-500 bg-emerald-50 border border-emerald-100 flex items-center justify-center overflow-hidden">
                                             <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=agent${i}`} alt="Agent" />
                                         </div>
                                     ))}
-                                    <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-blue-600 bg-blue-700 text-[10px] font-black">+5</div>
+                                    <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-emerald-500 bg-emerald-600 text-[10px] font-black">+5</div>
                                 </div>
                                 <Button className="w-full bg-white/20 hover:bg-white/30 text-white rounded-xl border-none shadow-none text-[10px] font-black uppercase tracking-widest">{t('common.view')}</Button>
                             </div>
@@ -191,8 +191,8 @@ export default function CustomerDashboard() {
                 <Card className="lg:col-span-5 border-none shadow-2xl shadow-slate-100 rounded-[3rem] overflow-hidden bg-white">
                     <CardHeader className="bg-slate-50/50 p-10 flex flex-row items-center justify-between border-b border-slate-100">
                         <div>
-                            <div className="flex items-center gap-2 text-blue-600 mb-1">
-                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 bg-blue-600 rounded-full" />
+                            <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 bg-emerald-500 rounded-full" />
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">{t('dashboard.activity.title')}</span>
                             </div>
                             <CardTitle className="text-3xl font-black text-slate-900 tracking-tight">{t('dashboard.activity.subtitle')}</CardTitle>
@@ -223,7 +223,7 @@ export default function CustomerDashboard() {
                                     >
                                         <div className="flex items-center gap-6">
                                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl transition-transform group-hover:scale-110 duration-500 shadow-sm ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
-                                                req.status === 'rejected' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
+                                                req.status === 'rejected' ? 'bg-rose-50 text-rose-600' : 'bg-sky-50 text-sky-700'
                                                 }`}>
                                                 {req.status === 'approved' ? <CheckCircleIcon className="h-6 w-6" /> : (req.status === 'rejected' ? <Info className="h-6 w-6" /> : <Clock className="h-6 w-6" />)}
                                             </div>
@@ -247,7 +247,7 @@ export default function CustomerDashboard() {
                                                     {t(`common.status.${req.status}`)}
                                                 </span>
                                             </div>
-                                            <ChevronRight className="h-5 w-5 text-slate-200 group-hover:text-blue-600 transition-all" />
+                                            <ChevronRight className="h-5 w-5 text-slate-200 group-hover:text-emerald-600 transition-all" />
                                         </div>
                                     </motion.div>
                                 ))}
@@ -262,27 +262,27 @@ export default function CustomerDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="bg-slate-900 rounded-[3.5rem] p-12 md:p-20 relative overflow-hidden group"
+                className="bg-gradient-to-br from-[#0f3d5c] via-[#0f2f43] to-[#0c1f2f] rounded-[3.5rem] p-12 md:p-20 relative overflow-hidden group"
             >
-                <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-600/20 to-transparent pointer-events-none" />
+                <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-emerald-300/20 to-transparent pointer-events-none" />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
                     <div>
-                        <div className="flex items-center gap-2 text-blue-400 mb-6 font-black uppercase tracking-[0.4em] text-xs">
+                        <div className="flex items-center gap-2 text-emerald-400 mb-6 font-black uppercase tracking-[0.4em] text-xs">
                             <SparklesIcon className="h-5 w-5" />
                             <span>{t('dashboard.store.subtitle')}</span>
                         </div>
                         <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">{t('dashboard.store.title')}</h2>
                         <p className="text-slate-400 mt-8 text-lg max-w-sm leading-relaxed">
-                            Accede a dispositivos de última generación procedentes de liquidaciones con descuentos de hasta el 40%. Solo para miembros Oryxen.
+                            Accede a dispositivos de última generación procedentes de liquidaciones con descuentos de hasta el 40%. Solo para miembros Secure.
                         </p>
                         <Link to="/app/store">
-                            <Button className="mt-12 bg-white hover:bg-slate-100 text-slate-900 px-10 py-8 h-auto rounded-[1.5rem] font-black uppercase tracking-widest text-xs shadow-2xl transition-all active:scale-95">
+                            <Button className="mt-12 bg-emerald-300 hover:bg-emerald-200 text-slate-900 px-10 py-8 h-auto rounded-[1.5rem] font-black uppercase tracking-widest text-xs shadow-2xl shadow-emerald-200/30 transition-all active:scale-95">
                                 {t('dashboard.store.cta')}
                             </Button>
                         </Link>
                     </div>
                     <div className="relative group-hover:scale-105 transition-transform duration-1000">
-                        <div className="absolute inset-0 bg-blue-500/20 blur-[120px] rounded-full" />
+                        <div className="absolute inset-0 bg-emerald-400/25 blur-[120px] rounded-full" />
                         <motion.div
                             animate={{ y: [0, -20, 0] }}
                             transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
@@ -294,7 +294,7 @@ export default function CustomerDashboard() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <h4 className="text-white font-black text-xl tracking-tight">iPhone 15 Pro Max</h4>
-                                    <p className="text-blue-400 font-black text-xs uppercase tracking-widest mt-1">Liquidación Flash</p>
+                                    <p className="text-emerald-400 font-black text-xs uppercase tracking-widest mt-1">Liquidación Flash</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-slate-400 text-xs line-through">1.299€</p>

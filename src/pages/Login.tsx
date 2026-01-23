@@ -47,11 +47,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white font-sans selection:bg-emerald-100 selection:text-slate-900">
 
       {/* Visual Side (Hidden on Mobile) */}
-      <div className="hidden lg:flex relative bg-slate-900 overflow-hidden items-center justify-center p-20">
-        <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-indigo-600/20 z-10" />
+      <div className="hidden lg:flex relative bg-[#0d2434] overflow-hidden items-center justify-center p-20">
+        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-400/15 to-sky-400/15 z-10" />
 
         {/* Animated Background Elements */}
         <motion.div
@@ -60,7 +60,7 @@ export default function Login() {
             rotate: [0, 90, 0]
           }}
           transition={{ repeat: Infinity, duration: 20 }}
-          className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[100px]"
+          className="absolute -top-1/4 -right-1/4 w-[600px] h-[600px] bg-emerald-300/15 rounded-full blur-[100px]"
         />
         <motion.div
           animate={{
@@ -68,7 +68,7 @@ export default function Login() {
             rotate: [90, 0, 90]
           }}
           transition={{ repeat: Infinity, duration: 25 }}
-          className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px]"
+          className="absolute -bottom-1/4 -left-1/4 w-[500px] h-[500px] bg-sky-400/15 rounded-full blur-[100px]"
         />
 
         <div className="relative z-20 max-w-md w-full text-center space-y-8">
@@ -77,7 +77,7 @@ export default function Login() {
             animate={{ opacity: 1, y: 0 }}
             className="w-24 h-24 bg-white/10 backdrop-blur-3xl border border-white/20 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl"
           >
-            <ShieldCheck className="w-12 h-12 text-blue-400" />
+            <ShieldCheck className="w-12 h-12 text-emerald-300" />
           </motion.div>
 
           <motion.div
@@ -86,7 +86,7 @@ export default function Login() {
             transition={{ delay: 0.1 }}
             className="space-y-4"
           >
-            <h1 className="text-5xl font-black text-white tracking-tighter italic">Oryxen<span className="text-blue-500">.</span></h1>
+            <h1 className="text-5xl font-black text-white tracking-tighter italic">Secure<span className="text-emerald-300">.</span></h1>
             <p className="text-slate-400 text-lg font-medium leading-relaxed">
               Accede a liquidez inmediata respaldada por tus activos de alta gama. Seguridad, transparencia y rapidez.
             </p>
@@ -117,10 +117,10 @@ export default function Login() {
         >
           <div className="text-center lg:text-left space-y-3">
             <div className="inline-flex lg:hidden items-center gap-2 mb-6">
-              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-                <span className="text-white font-black italic">O</span>
+              <div className="w-10 h-10 bg-[#0f3d5c] rounded-xl flex items-center justify-center">
+                <span className="text-white font-black italic">S</span>
               </div>
-              <span className="font-black text-slate-900 text-xl tracking-tighter">Oryxen<span className="text-blue-600">.</span></span>
+              <span className="font-black text-slate-900 text-xl tracking-tighter">Secure<span className="text-emerald-500">.</span></span>
             </div>
             <h2 className="text-4xl font-black text-slate-900 tracking-tight">{t('auth.login.title')}</h2>
             <p className="text-slate-500 font-medium text-lg">{t('auth.login.subtitle')}</p>
@@ -148,12 +148,12 @@ export default function Login() {
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">{t('field.email')}</label>
                 <div className="relative group">
-                  <AtSign className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                  <AtSign className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                   <Input
                     type="email"
                     required
-                    className="h-16 pl-14 bg-white border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-blue-500 font-bold text-slate-900 transition-all"
-                    placeholder="email@oryxen.tech"
+                    className="h-16 pl-14 bg-white border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-emerald-400 font-bold text-slate-900 transition-all"
+                    placeholder="email@secure.tech"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -163,14 +163,14 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                   <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('field.password')}</label>
-                  <Link to="/reset" className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700">{t('auth.login.forgot')}</Link>
+                  <Link to="/reset" className="text-[10px] font-black uppercase tracking-widest text-emerald-600 hover:text-emerald-700">{t('auth.login.forgot')}</Link>
                 </div>
                 <div className="relative group">
-                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-emerald-500 transition-colors" />
                   <Input
                     type="password"
                     required
-                    className="h-16 pl-14 bg-white border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-blue-500 font-bold text-slate-900 transition-all"
+                    className="h-16 pl-14 bg-white border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-emerald-400 font-bold text-slate-900 transition-all"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -182,7 +182,7 @@ export default function Login() {
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full h-16 bg-slate-900 hover:bg-black text-white rounded-[1.5rem] shadow-2xl shadow-slate-200 text-sm font-black uppercase tracking-[0.2em] transition-all group active:scale-[0.98]"
+              className="w-full h-16 bg-[#0f3d5c] hover:bg-[#0d3049] text-white rounded-[1.5rem] shadow-2xl shadow-emerald-200/30 text-sm font-black uppercase tracking-[0.2em] transition-all group active:scale-[0.98]"
             >
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : (
                 <>
@@ -202,14 +202,14 @@ export default function Login() {
             onClick={handleGoogle}
             type="button"
             variant="outline"
-            className="w-full h-16 border-slate-200 hover:bg-white rounded-[1.5rem] text-sm font-black uppercase tracking-widest gap-3 transition-all hover:border-slate-300"
+            className="w-full h-16 border-emerald-100 hover:bg-emerald-50 rounded-[1.5rem] text-sm font-black uppercase tracking-widest gap-3 transition-all hover:border-emerald-200 text-emerald-700"
           >
-            <Chrome className="h-5 w-5 text-blue-600" />
+            <Chrome className="h-5 w-5 text-emerald-600" />
             Google Connect
           </Button>
 
           <p className="text-center text-slate-500 text-sm font-medium">
-            {t('auth.login.noAccount')} <Link to="/register" className="text-blue-600 font-black hover:text-blue-700 ml-1">{t('auth.login.signup')}</Link>
+            {t('auth.login.noAccount')} <Link to="/register" className="text-emerald-600 font-black hover:text-emerald-700 ml-1">{t('auth.login.signup')}</Link>
           </p>
         </motion.div>
       </div>
