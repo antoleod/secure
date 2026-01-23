@@ -444,3 +444,14 @@ export async function updateProfile(uid: string, data: Partial<UserType>) {
         updatedAt: Timestamp.now(),
     });
 }
+
+export async function submitSupportTicket(uid: string, data: { subject: string; message: string; category: string }) {
+    const ref = collection(db, 'support_tickets');
+    await addDoc(ref, {
+        ...data,
+        customerUid: uid,
+        status: 'open',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+    });
+}
