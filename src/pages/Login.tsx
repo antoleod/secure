@@ -1,109 +1,100 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useI18n } from '@/contexts/I18nContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { AlertCircle } from 'lucide-react';
 
-export function LoginPage() {
-    const { signIn } = useAuth();
-    const { t } = useI18n();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { signInEmail, signInGoogle, error, clearError } = useAuth();
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-
-        try {
-            setError('');
-            setLoading(true);
-            await signIn(email, password);
-        } catch (err) {
-            console.error(err);
-            setError(t('auth.error.credentials'));
-        } finally {
-            setLoading(false);
-        }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await signInEmail(email, password);
+      navigate('/dashboard');
+    } catch {
+      // Error is handled in context
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
-                <div className="flex items-center justify-between mb-4">
-                    <Link to="/" className="inline-flex items-center gap-2">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-2xl">O</span>
-                        </div>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            {t('common.shortName')}
-                        </span>
-                    </Link>
-                    <LanguageSelector />
-                </div>
+  const handleGoogle = async () => {
+    try {
+      await signInGoogle();
+      navigate('/dashboard');
+    } catch {
+      // Error handled in context
+    }
+  };
 
-                <Card className="animate-slide-up">
-                    <CardHeader>
-                        <CardTitle className="text-2xl">{t('auth.login.title')}</CardTitle>
-                        <CardDescription>{t('auth.login.subtitle')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {error && (
-                                <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-md text-sm">
-                                    {error}
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <Label htmlFor="email">{t('field.email')}</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="you@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                    autoComplete="email"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="password">{t('field.password')}</Label>
-                                    <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                                        {t('auth.login.forgot')}
-                                    </Link>
-                                </div>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    autoComplete="current-password"
-                                />
-                            </div>
-
-                            <Button type="submit" className="w-full" disabled={loading}>
-                                {loading ? t('common.loading') : t('auth.login.cta')}
-                            </Button>
-                        </form>
-                    </CardContent>
-                    <CardFooter className="flex-col gap-2">
-                        <div className="text-sm text-muted-foreground text-center">
-                            {t('auth.login.noAccount')}{' '}
-                            <Link to="/register" className="text-primary hover:underline">
-                                {t('auth.login.signup')}
-                            </Link>
-                        </div>
-                    </CardFooter>
-                </Card>
-            </div>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900">OryxenTech</h2>
+          <p className="mt-2 text-gray-600">Sign in to your account</p>
         </div>
-    );
+
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded-lg flex items-center gap-2 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            <span>{error}</span>
+            <button onClick={clearError} className="ml-auto font-bold">&times;</button>
+          </div>
+        )}
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <input
+              type="email"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+              type="password"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <div className="flex items-center justify-between text-sm">
+            <Link to="/register" className="text-blue-600 hover:text-blue-500">Create account</Link>
+            <Link to="/reset" className="text-blue-600 hover:text-blue-500">Forgot password?</Link>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-300"></div></div>
+          <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-gray-500">Or continue with</span></div>
+        </div>
+
+        <button
+          onClick={handleGoogle}
+          type="button"
+          className="w-full py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Sign in with Google
+        </button>
+      </div>
+    </div>
+  );
 }

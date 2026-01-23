@@ -1,152 +1,145 @@
-/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
-    User as FirebaseUser,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    signOut,
-    sendPasswordResetEmail,
-    onAuthStateChanged,
+  User,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+  sendPasswordResetEmail,
+  onAuthStateChanged,
+  AuthError
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import type { User, UserRole, UserStatus } from '@/types';
-import { userConverter } from '@/lib/converters';
+import { auth, initializationError } from '../lib/firebase';
 
 interface AuthContextType {
-    currentUser: FirebaseUser | null;
-    userData: User | null;
-    userRole: UserRole | null;
-    userStatus: UserStatus | null;
-    loading: boolean;
-    signIn: (email: string, password: string) => Promise<void>;
-    signUp: (
-        email: string,
-        password: string,
-        fullName: string,
-        phone: string,
-        dob: string
-    ) => Promise<void>;
-    logout: () => Promise<void>;
-    resetPassword: (email: string) => Promise<void>;
-    refreshProfile: () => Promise<void>;
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  signInEmail: (email: string, pass: string) => Promise<void>;
+  signUpEmail: (email: string, pass: string) => Promise<void>;
+  signInGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within AuthProvider');
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(initializationError ? initializationError.message : null);
+
+  useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
     }
-    return context;
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const handleError = (err: unknown) => {
+    const firebaseError = err as AuthError;
+    console.error('Auth Error:', firebaseError.code, firebaseError.message);
+    
+    switch (firebaseError.code) {
+      case 'auth/invalid-email':
+        setError('El correo electrónico no es válido.');
+        break;
+      case 'auth/user-disabled':
+        setError('Este usuario ha sido deshabilitado.');
+        break;
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        setError('Credenciales incorrectas.');
+        break;
+      case 'auth/email-already-in-use':
+        setError('El correo ya está registrado.');
+        break;
+      case 'auth/weak-password':
+        setError('La contraseña es muy débil (mínimo 6 caracteres).');
+        break;
+      case 'auth/popup-closed-by-user':
+        setError('Se cerró la ventana de inicio de sesión.');
+        break;
+      default:
+        setError('Ocurrió un error al autenticar. Intenta de nuevo.');
+    }
+  };
+
+  const signInEmail = async (email: string, pass: string) => {
+    if (!auth) return;
+    setError(null);
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
+  const signUpEmail = async (email: string, pass: string) => {
+    if (!auth) return;
+    setError(null);
+    try {
+      await createUserWithEmailAndPassword(auth, email, pass);
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
+  const signInGoogle = async () => {
+    if (!auth) return;
+    setError(null);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    if (!auth) return;
+    setError(null);
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
+  const signOut = async () => {
+    if (!auth) return;
+    try {
+      await firebaseSignOut(auth);
+    } catch (err) {
+      handleError(err);
+    }
+  };
+
+  const clearError = () => setError(null);
+
+  return (
+    <AuthContext.Provider value={{ user, loading, error, signInEmail, signUpEmail, signInGoogle, resetPassword, signOut, clearError }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-    const [userData, setUserData] = useState<User | null>(null);
-    const [userRole, setUserRole] = useState<UserRole | null>(null);
-    const [userStatus, setUserStatus] = useState<UserStatus | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    async function signUp(
-        email: string,
-        password: string,
-        fullName: string,
-        phone: string,
-        dob: string
-    ) {
-        const normalizedEmail = email.trim().toLowerCase();
-        const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
-        const uid = userCredential.user.uid;
-
-        // Create user document
-        const userData: User = {
-            uid,
-            role: 'customer',
-            status: 'active',
-            fullName,
-            email: normalizedEmail,
-            phone,
-            dob,
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
-        };
-
-        await setDoc(doc(db, 'users', uid).withConverter(userConverter), userData);
-    }
-
-    async function signIn(email: string, password: string) {
-        const normalizedEmail = email.trim().toLowerCase();
-        await signInWithEmailAndPassword(auth, normalizedEmail, password);
-    }
-
-    async function logout() {
-        await signOut(auth);
-    }
-
-    async function resetPassword(email: string) {
-        await sendPasswordResetEmail(auth, email);
-    }
-
-    async function loadUserProfile(uid: string) {
-        const userDocRef = doc(db, 'users', uid).withConverter(userConverter);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists()) {
-            const data = userDoc.data();
-            setUserData(data);
-            setUserRole(data.status === 'active' ? data.role : null);
-            setUserStatus(data.status);
-        } else {
-            console.error('User document not found');
-            setUserData(null);
-            setUserRole(null);
-            setUserStatus(null);
-        }
-    }
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            setCurrentUser(user);
-
-            if (user) {
-                try {
-                    await loadUserProfile(user.uid);
-                } catch (error) {
-                    console.error('Error fetching user data:', error);
-                    setUserData(null);
-                    setUserRole(null);
-                    setUserStatus(null);
-                }
-            } else {
-                setUserData(null);
-                setUserRole(null);
-                setUserStatus(null);
-            }
-
-            setLoading(false);
-        });
-
-        return unsubscribe;
-    }, []);
-
-    const value: AuthContextType = {
-        currentUser,
-        userData,
-        userRole,
-        userStatus,
-        loading,
-        signIn,
-        signUp,
-        logout,
-        resetPassword,
-        refreshProfile: async () => {
-            if (currentUser?.uid) {
-                await loadUserProfile(currentUser.uid);
-            }
-        },
-    };
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
 }

@@ -1,32 +1,51 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { initializeApp, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { getAnalytics, isSupported, Analytics } from 'firebase/analytics';
 
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-export const app = initializeApp(firebaseConfig);
+// Validación de configuración crítica
+const requiredKeys = [
+  'apiKey',
+  'authDomain',
+  'projectId',
+  'storageBucket',
+  'messagingSenderId',
+  'appId'
+] as const;
 
-// Initialize services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);
+const missingKeys = requiredKeys.filter(key => !firebaseConfig[key]);
 
-// Connect to emulators in development
-if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true') {
-    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-    connectFirestoreEmulator(db, 'localhost', 8080);
-    connectStorageEmulator(storage, 'localhost', 9199);
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let analytics: Promise<Analytics | null> = Promise.resolve(null);
+let initializationError: Error | null = null;
+
+if (missingKeys.length > 0) {
+  initializationError = new Error(
+    `Falta configuración de Firebase: ${missingKeys.join(', ')}. Verifica tu archivo .env.local`
+  );
+  console.error(initializationError.message);
+} else {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    
+    if (import.meta.env.PROD) {
+      analytics = isSupported().then(yes => yes ? getAnalytics(app!) : null);
+    }
+  } catch (error) {
+    initializationError = error as Error;
+    console.error('Error inicializando Firebase:', error);
+  }
 }
 
-// Feature flags
-export const ENABLE_UPLOADS = import.meta.env.VITE_ENABLE_UPLOADS === 'true';
+export { app, auth, analytics, initializationError };

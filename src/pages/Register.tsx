@@ -1,196 +1,78 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { z } from 'zod';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useI18n } from '@/contexts/I18nContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
+import { useAuth } from '../contexts/AuthContext';
+import { AlertCircle } from 'lucide-react';
 
-const registrationSchema = z.object({
-    fullName: z.string().min(3),
-    email: z.string().email(),
-    phone: z.string().min(6),
-    dob: z.string().min(4),
-    password: z.string().min(8),
-    confirmPassword: z.string().min(8),
-});
+export default function Register() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { signUpEmail, error, clearError } = useAuth();
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-export function RegisterPage() {
-    const navigate = useNavigate();
-    const { signUp } = useAuth();
-    const { t } = useI18n();
-    const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        phone: '',
-        dob: '',
-        password: '',
-        confirmPassword: '',
-    });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    async function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
-
-        const validation = registrationSchema.safeParse(formData);
-        if (!validation.success) {
-            setError(t('common.error.generic'));
-            return;
-        }
-
-        if (formData.password !== formData.confirmPassword) {
-            return setError(t('auth.error.passwordMismatch'));
-        }
-
-        try {
-            setError('');
-            setLoading(true);
-            await signUp(formData.email, formData.password, formData.fullName, formData.phone, formData.dob);
-            navigate('/app');
-        } catch (err: unknown) {
-            console.error(err);
-            const message = err instanceof Error ? err.message : t('common.error.generic');
-            setError(message);
-        } finally {
-            setLoading(false);
-        }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await signUpEmail(email, password);
+      navigate('/dashboard');
+    } catch {
+      // Error handled in context
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
-    function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
-    }
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
-                <div className="flex items-center justify-between mb-4">
-                    <Link to="/" className="inline-flex items-center gap-2 mb-2">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                            <span className="text-white font-bold text-2xl">O</span>
-                        </div>
-                        <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            {t('common.shortName')}
-                        </span>
-                    </Link>
-                    <LanguageSelector />
-                </div>
-
-                <Card className="animate-slide-up">
-                    <CardHeader>
-                        <CardTitle className="text-2xl">{t('auth.register.title')}</CardTitle>
-                        <CardDescription>{t('auth.register.subtitle')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {error && (
-                                <div className="bg-destructive/10 text-destructive px-4 py-3 rounded-md text-sm">
-                                    {error}
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <Label htmlFor="fullName">{t('field.fullName')}</Label>
-                                <Input
-                                    id="fullName"
-                                    name="fullName"
-                                    placeholder="Jane Doe"
-                                    value={formData.fullName}
-                                    onChange={handleChange}
-                                    required
-                                    autoComplete="name"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="email">{t('field.email')}</Label>
-                                <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    placeholder="you@example.com"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
-                                    autoComplete="email"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">{t('field.phone')}</Label>
-                                <Input
-                                    id="phone"
-                                    name="phone"
-                                    type="tel"
-                                    placeholder="+1234567890"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    required
-                                    autoComplete="tel"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="dob">{t('field.dob')}</Label>
-                                <Input
-                                    id="dob"
-                                    name="dob"
-                                    type="date"
-                                    value={formData.dob}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="password">{t('field.password')}</Label>
-                                <Input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    required
-                                    autoComplete="new-password"
-                                    minLength={8}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="confirmPassword">{t('field.confirmPassword')}</Label>
-                                <Input
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    type="password"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    required
-                                    autoComplete="new-password"
-                                    minLength={8}
-                                />
-                            </div>
-
-                            <Button type="submit" className="w-full" disabled={loading}>
-                                {loading ? t('common.loading') : t('auth.register.cta')}
-                            </Button>
-                        </form>
-                    </CardContent>
-                    <CardFooter className="flex-col gap-2">
-                        <div className="text-sm text-muted-foreground text-center">
-                            {t('auth.register.haveAccount')}{' '}
-                            <Link to="/login" className="text-primary hover:underline">
-                                {t('auth.register.signin')}
-                            </Link>
-                        </div>
-                    </CardFooter>
-                </Card>
-            </div>
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
+          <p className="mt-2 text-gray-600">Join OryxenTech today</p>
         </div>
-    );
+
+        {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded-lg flex items-center gap-2 text-sm">
+            <AlertCircle className="h-4 w-4" />
+            <span>{error}</span>
+            <button onClick={clearError} className="ml-auto font-bold">&times;</button>
+          </div>
+        )}
+
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <input
+              type="email"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+              type="password"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Password (min 6 chars)"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isSubmitting ? 'Creating account...' : 'Register'}
+          </button>
+
+          <div className="text-center text-sm">
+            <span className="text-gray-500">Already have an account? </span>
+            <Link to="/login" className="text-blue-600 hover:text-blue-500">Sign in</Link>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 }

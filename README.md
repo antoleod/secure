@@ -15,7 +15,8 @@ Aplicacion web (React + Firebase) para prestamos con garantia, control de roles 
 
 ## Configuracion local (sin exponer secretos)
 1. `cp .env.example .env` y completa los valores reales (no los subas a git).
-   - Mantener `VITE_ENABLE_UPLOADS=false` hasta tener reglas de Storage aprobadas.
+   - **IMPORTANTE**: Crea un archivo `.env.local` para tus credenciales locales. Este archivo está ignorado por git.
+   - Copia las variables de `.env.example` a `.env.local` y asigna los valores de tu proyecto Firebase.
    - Opcional: `VITE_USE_EMULATORS=true` y corre `npm run emulators` antes de `npm run dev`.
 2. `npm install`
 3. `npm run dev`
