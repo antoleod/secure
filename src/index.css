@@ -126,6 +126,17 @@
   background-size: 18px 18px;
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #f8fafc 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
 .soft-shadow {
   box-shadow: 0 25px 80px rgba(15, 23, 42, 0.4);
 }
