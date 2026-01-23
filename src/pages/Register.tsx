@@ -1,14 +1,27 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useI18n } from '@/contexts/I18nContext';
+import { LanguageSelector } from '@/components/LanguageSelector';
+
+const registrationSchema = z.object({
+    fullName: z.string().min(3),
+    email: z.string().email(),
+    phone: z.string().min(6),
+    dob: z.string().min(4),
+    password: z.string().min(8),
+    confirmPassword: z.string().min(8),
+});
 
 export function RegisterPage() {
     const navigate = useNavigate();
     const { signUp } = useAuth();
+    const { t } = useI18n();
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
@@ -23,28 +36,25 @@ export function RegisterPage() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
-        if (formData.password !== formData.confirmPassword) {
-            return setError('Passwords do not match');
+        const validation = registrationSchema.safeParse(formData);
+        if (!validation.success) {
+            setError(t('common.error.generic'));
+            return;
         }
 
-        if (formData.password.length < 6) {
-            return setError('Password must be at least 6 characters');
+        if (formData.password !== formData.confirmPassword) {
+            return setError(t('auth.error.passwordMismatch'));
         }
 
         try {
             setError('');
             setLoading(true);
-            await signUp(
-                formData.email,
-                formData.password,
-                formData.fullName,
-                formData.phone,
-                formData.dob
-            );
+            await signUp(formData.email, formData.password, formData.fullName, formData.phone, formData.dob);
             navigate('/app');
-        } catch (error: any) {
-            setError(error.message || 'Failed to create account');
-            console.error(error);
+        } catch (err: unknown) {
+            console.error(err);
+            const message = err instanceof Error ? err.message : t('common.error.generic');
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -60,23 +70,22 @@ export function RegisterPage() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
             <div className="w-full max-w-md">
-                <div className="text-center mb-8">
-                    <Link to="/" className="inline-flex items-center gap-2 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                    <Link to="/" className="inline-flex items-center gap-2 mb-2">
                         <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                             <span className="text-white font-bold text-2xl">O</span>
                         </div>
                         <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            OryxenTech
+                            {t('common.shortName')}
                         </span>
                     </Link>
+                    <LanguageSelector />
                 </div>
 
                 <Card className="animate-slide-up">
                     <CardHeader>
-                        <CardTitle className="text-2xl">Create Account</CardTitle>
-                        <CardDescription>
-                            Sign up to apply for a loan today
-                        </CardDescription>
+                        <CardTitle className="text-2xl">{t('auth.register.title')}</CardTitle>
+                        <CardDescription>{t('auth.register.subtitle')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,19 +96,20 @@ export function RegisterPage() {
                             )}
 
                             <div className="space-y-2">
-                                <Label htmlFor="fullName">Full Name</Label>
+                                <Label htmlFor="fullName">{t('field.fullName')}</Label>
                                 <Input
                                     id="fullName"
                                     name="fullName"
-                                    placeholder="John Doe"
+                                    placeholder="Jane Doe"
                                     value={formData.fullName}
                                     onChange={handleChange}
                                     required
+                                    autoComplete="name"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
+                                <Label htmlFor="email">{t('field.email')}</Label>
                                 <Input
                                     id="email"
                                     name="email"
@@ -108,11 +118,12 @@ export function RegisterPage() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
+                                    autoComplete="email"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
+                                <Label htmlFor="phone">{t('field.phone')}</Label>
                                 <Input
                                     id="phone"
                                     name="phone"
@@ -121,11 +132,12 @@ export function RegisterPage() {
                                     value={formData.phone}
                                     onChange={handleChange}
                                     required
+                                    autoComplete="tel"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="dob">Date of Birth</Label>
+                                <Label htmlFor="dob">{t('field.dob')}</Label>
                                 <Input
                                     id="dob"
                                     name="dob"
@@ -137,7 +149,7 @@ export function RegisterPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">{t('field.password')}</Label>
                                 <Input
                                     id="password"
                                     name="password"
@@ -145,11 +157,13 @@ export function RegisterPage() {
                                     value={formData.password}
                                     onChange={handleChange}
                                     required
+                                    autoComplete="new-password"
+                                    minLength={8}
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                                <Label htmlFor="confirmPassword">{t('field.confirmPassword')}</Label>
                                 <Input
                                     id="confirmPassword"
                                     name="confirmPassword"
@@ -157,19 +171,21 @@ export function RegisterPage() {
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
                                     required
+                                    autoComplete="new-password"
+                                    minLength={8}
                                 />
                             </div>
 
                             <Button type="submit" className="w-full" disabled={loading}>
-                                {loading ? 'Creating Account...' : 'Create Account'}
+                                {loading ? t('common.loading') : t('auth.register.cta')}
                             </Button>
                         </form>
                     </CardContent>
                     <CardFooter className="flex-col gap-2">
                         <div className="text-sm text-muted-foreground text-center">
-                            Already have an account?{' '}
+                            {t('auth.register.haveAccount')}{' '}
                             <Link to="/login" className="text-primary hover:underline">
-                                Sign in
+                                {t('auth.register.signin')}
                             </Link>
                         </div>
                     </CardFooter>

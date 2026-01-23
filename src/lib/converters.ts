@@ -20,7 +20,8 @@ import type {
 // User converter
 export const userConverter: FirestoreDataConverter<User> = {
     toFirestore(user: User): DocumentData {
-        const { uid, ...data } = user;
+        const data = { ...user };
+        delete (data as Partial<User>).uid;
         return data;
     },
     fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): User {
@@ -35,7 +36,8 @@ export const userConverter: FirestoreDataConverter<User> = {
 // KYC converter
 export const kycConverter: FirestoreDataConverter<KYC> = {
     toFirestore(kyc: KYC): DocumentData {
-        const { uid, ...data } = kyc;
+        const data = { ...kyc };
+        delete (data as Partial<KYC>).uid;
         return data;
     },
     fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): KYC {
@@ -50,7 +52,8 @@ export const kycConverter: FirestoreDataConverter<KYC> = {
 // Collateral converter
 export const collateralConverter: FirestoreDataConverter<Collateral> = {
     toFirestore(collateral: Collateral): DocumentData {
-        const { id, ...data } = collateral;
+        const data = { ...collateral };
+        delete (data as Partial<Collateral>).id;
         return data;
     },
     fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): Collateral {
@@ -65,7 +68,8 @@ export const collateralConverter: FirestoreDataConverter<Collateral> = {
 // LoanRequest converter
 export const loanRequestConverter: FirestoreDataConverter<LoanRequest> = {
     toFirestore(request: LoanRequest): DocumentData {
-        const { id, ...data } = request;
+        const data = { ...request };
+        delete (data as Partial<LoanRequest>).id;
         return data;
     },
     fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): LoanRequest {
@@ -80,7 +84,8 @@ export const loanRequestConverter: FirestoreDataConverter<LoanRequest> = {
 // Loan converter
 export const loanConverter: FirestoreDataConverter<Loan> = {
     toFirestore(loan: Loan): DocumentData {
-        const { id, ...data } = loan;
+        const data = { ...loan };
+        delete (data as Partial<Loan>).id;
         return data;
     },
     fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): Loan {
@@ -95,7 +100,8 @@ export const loanConverter: FirestoreDataConverter<Loan> = {
 // Payment converter
 export const paymentConverter: FirestoreDataConverter<Payment> = {
     toFirestore(payment: Payment): DocumentData {
-        const { id, ...data } = payment;
+        const data = { ...payment };
+        delete (data as Partial<Payment>).id;
         return data;
     },
     fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): Payment {
@@ -120,7 +126,8 @@ export const settingsConverter: FirestoreDataConverter<GlobalSettings> = {
 // AuditLog converter
 export const auditLogConverter: FirestoreDataConverter<AuditLog> = {
     toFirestore(log: AuditLog): DocumentData {
-        const { id, ...data } = log;
+        const data = { ...log };
+        delete (data as Partial<AuditLog>).id;
         return data;
     },
     fromFirestore(snapshot: QueryDocumentSnapshot, options: SnapshotOptions): AuditLog {

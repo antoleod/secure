@@ -1,9 +1,12 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { useI18n } from '@/contexts/I18nContext';
 
 export function AdminLayout() {
     const { logout, userData } = useAuth();
+    const { t } = useI18n();
     const navigate = useNavigate();
 
     async function handleLogout() {
@@ -26,34 +29,35 @@ export function AdminLayout() {
                                 <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
                                     <span className="text-white font-bold text-xl">A</span>
                                 </div>
-                                <span className="text-xl font-bold hidden sm:inline">Admin Panel</span>
+                                <span className="text-xl font-bold hidden sm:inline">{t('nav.admin')}</span>
                             </Link>
 
                             <nav className="hidden md:flex items-center gap-4">
                                 <Link to="/admin" className="text-sm hover:text-primary transition-colors">
-                                    Dashboard
+                                    {t('nav.dashboard')}
                                 </Link>
                                 <Link to="/admin/requests" className="text-sm hover:text-primary transition-colors">
-                                    Loan Requests
+                                    {t('nav.requests')}
                                 </Link>
                                 <Link to="/admin/loans" className="text-sm hover:text-primary transition-colors">
-                                    All Loans
+                                    {t('nav.loans')}
                                 </Link>
                                 <Link to="/admin/settings" className="text-sm hover:text-primary transition-colors">
-                                    Settings
+                                    {t('nav.settings')}
                                 </Link>
                                 <Link to="/admin/audit" className="text-sm hover:text-primary transition-colors">
-                                    Audit Log
+                                    {t('nav.audit')}
                                 </Link>
                             </nav>
                         </div>
 
                         <div className="flex items-center gap-4">
                             <span className="text-sm text-muted-foreground hidden sm:inline">
-                                {userData?.fullName} (Admin)
+                                {userData?.fullName} ({t('nav.admin')})
                             </span>
+                            <LanguageSelector />
                             <Button variant="outline" size="sm" onClick={handleLogout}>
-                                Logout
+                                {t('common.logout')}
                             </Button>
                         </div>
                     </div>

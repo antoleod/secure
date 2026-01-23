@@ -10,35 +10,43 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 let testEnv: RulesTestEnvironment;
+const emulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
+const shouldSkip = !emulatorHost;
+const [host, portString] = emulatorHost ? emulatorHost.replace('http://', '').split(':') : [];
 
-beforeAll(async () => {
-    // Load Firestore rules
-    const rulesPath = resolve(__dirname, '../firebase/firestore.rules');
-    const rules = readFileSync(rulesPath, 'utf8');
-
-    testEnv = await initializeTestEnvironment({
-        projectId: 'oryxentech-test',
-        firestore: {
-            rules,
-            host: 'localhost',
-            port: 8080,
-        },
+if (shouldSkip) {
+    describe.skip('Firestore Security Rules', () => {
+        it('skipped because FIRESTORE_EMULATOR_HOST is not set', () => {});
     });
-});
+} else {
+    beforeAll(async () => {
+        // Load Firestore rules
+        const rulesPath = resolve(__dirname, '../../firebase/firestore.rules');
+        const rules = readFileSync(rulesPath, 'utf8');
 
-afterAll(async () => {
-    await testEnv.cleanup();
-});
+        testEnv = await initializeTestEnvironment({
+            projectId: 'oryxentech-test',
+            firestore: {
+                rules,
+                host,
+                port: Number(portString),
+            },
+        });
+    });
 
-beforeEach(async () => {
-    await testEnv.clearFirestore();
-});
+    afterAll(async () => {
+        await testEnv?.cleanup();
+    });
 
-describe('Firestore Security Rules', () => {
-    describe('Users Collection', () => {
-        it('should allow a user to read their own document', async () => {
-            const userId = 'user123';
-            const db = testEnv.authenticatedContext(userId).firestore();
+    beforeEach(async () => {
+        await testEnv?.clearFirestore();
+    });
+
+    describe('Firestore Security Rules', () => {
+        describe('Users Collection', () => {
+            it('should allow a user to read their own document', async () => {
+                const userId = 'user123';
+                const db = testEnv.authenticatedContext(userId).firestore();
 
             // Create user document first
             await testEnv.withSecurityRulesDisabled(async (context) => {
@@ -381,3 +389,4 @@ describe('Firestore Security Rules', () => {
         });
     });
 });
+}

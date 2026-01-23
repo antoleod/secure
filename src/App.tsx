@@ -15,101 +15,117 @@ import { ForgotPasswordPage } from '@/pages/ForgotPassword';
 
 // Customer Pages
 import { CustomerDashboard } from '@/pages/customer/Dashboard';
+import { VerifyIdentityPage } from '@/pages/customer/VerifyIdentity';
+import { NewLoanPage } from '@/pages/customer/NewLoan';
+import { CollateralPage } from '@/pages/customer/Collateral';
+import { ContractPage } from '@/pages/customer/Contract';
+import { SubmittedPage } from '@/pages/customer/Submitted';
+import { LoansPage } from '@/pages/customer/Loans';
+import { LoanDetailsPage } from '@/pages/customer/LoanDetails';
+import { PaymentsPage } from '@/pages/customer/Payments';
+import { LoyaltyPage } from '@/pages/customer/Loyalty';
+import { HelpPage } from '@/pages/customer/Help';
 
 // Admin Pages
 import { AdminDashboard } from '@/pages/admin/Dashboard';
+import { RequestsPage } from '@/pages/admin/Requests';
+import { RequestDetailsPage } from '@/pages/admin/RequestDetails';
+import { AdminLoansPage } from '@/pages/admin/Loans';
+import { AdminLoanDetailsPage } from '@/pages/admin/LoanDetails';
+import { SettingsPage } from '@/pages/admin/Settings';
+import { AuditLogPage } from '@/pages/admin/AuditLog';
 
 import './index.css';
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            retry: 1,
+        },
     },
-  },
 });
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <HashRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route
-              path="/login"
-              element={
-                <PublicOnlyRoute>
-                  <LoginPage />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <PublicOnlyRoute>
-                  <RegisterPage />
-                </PublicOnlyRoute>
-              }
-            />
-            <Route
-              path="/forgot-password"
-              element={
-                <PublicOnlyRoute>
-                  <ForgotPasswordPage />
-                </PublicOnlyRoute>
-              }
-            />
+    return (
+        <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+                <HashRouter>
+                    <Routes>
+                        {/* Public Routes */}
+                        <Route path="/" element={<LandingPage />} />
+                        <Route
+                            path="/login"
+                            element={
+                                <PublicOnlyRoute>
+                                    <LoginPage />
+                                </PublicOnlyRoute>
+                            }
+                        />
+                        <Route
+                            path="/register"
+                            element={
+                                <PublicOnlyRoute>
+                                    <RegisterPage />
+                                </PublicOnlyRoute>
+                            }
+                        />
+                        <Route
+                            path="/forgot-password"
+                            element={
+                                <PublicOnlyRoute>
+                                    <ForgotPasswordPage />
+                                </PublicOnlyRoute>
+                            }
+                        />
 
-            {/* Customer Routes */}
-            <Route
-              path="/app"
-              element={
-                <ProtectedRoute allowedRoles={['customer']}>
-                  <CustomerLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<CustomerDashboard />} />
-              <Route path="verify-identity" element={<div>Verify Identity (Coming Soon)</div>} />
-              <Route path="new-loan" element={<div>New Loan (Coming Soon)</div>} />
-              <Route path="collateral" element={<div>Collateral (Coming Soon)</div>} />
-              <Route path="contract" element={<div>Contract (Coming Soon)</div>} />
-              <Route path="submitted" element={<div>Submitted (Coming Soon)</div>} />
-              <Route path="loans" element={<div>My Loans (Coming Soon)</div>} />
-              <Route path="loans/:id" element={<div>Loan Details (Coming Soon)</div>} />
-              <Route path="payments" element={<div>Payments (Coming Soon)</div>} />
-              <Route path="loyalty" element={<div>Loyalty (Coming Soon)</div>} />
-              <Route path="help" element={<div>Help (Coming Soon)</div>} />
-            </Route>
+                        {/* Customer Routes */}
+                        <Route
+                            path="/app"
+                            element={
+                                <ProtectedRoute allowedRoles={['customer']}>
+                                    <CustomerLayout />
+                                </ProtectedRoute>
+                            }
+                        >
+                            <Route index element={<CustomerDashboard />} />
+                            <Route path="verify-identity" element={<VerifyIdentityPage />} />
+                            <Route path="new-loan" element={<NewLoanPage />} />
+                            <Route path="collateral" element={<CollateralPage />} />
+                            <Route path="contract" element={<ContractPage />} />
+                            <Route path="submitted" element={<SubmittedPage />} />
+                            <Route path="loans" element={<LoansPage />} />
+                            <Route path="loans/:id" element={<LoanDetailsPage />} />
+                            <Route path="payments" element={<PaymentsPage />} />
+                            <Route path="loyalty" element={<LoyaltyPage />} />
+                            <Route path="help" element={<HelpPage />} />
+                        </Route>
 
-            {/* Admin Routes */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboard />} />
-              <Route path="requests" element={<div>Loan Requests (Coming Soon)</div>} />
-              <Route path="requests/:id" element={<div>Request Details (Coming Soon)</div>} />
-              <Route path="loans" element={<div>All Loans (Coming Soon)</div>} />
-              <Route path="loans/:id" element={<div>Loan Management (Coming Soon)</div>} />
-              <Route path="settings" element={<div>Settings (Coming Soon)</div>} />
-              <Route path="audit" element={<div>Audit Log (Coming Soon)</div>} />
-            </Route>
+                        {/* Admin Routes */}
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute allowedRoles={['admin']}>
+                                    <AdminLayout />
+                                </ProtectedRoute>
+                            }
+                        >
+                            <Route index element={<AdminDashboard />} />
+                            <Route path="requests" element={<RequestsPage />} />
+                            <Route path="requests/:id" element={<RequestDetailsPage />} />
+                            <Route path="loans" element={<AdminLoansPage />} />
+                            <Route path="loans/:id" element={<AdminLoanDetailsPage />} />
+                            <Route path="settings" element={<SettingsPage />} />
+                            <Route path="audit" element={<AuditLogPage />} />
+                        </Route>
 
-            {/* 404 */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </HashRouter>
-      </AuthProvider>
-    </QueryClientProvider>
-  );
+                        {/* 404 */}
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                </HashRouter>
+            </AuthProvider>
+        </QueryClientProvider>
+    );
 }
 
 export default App;

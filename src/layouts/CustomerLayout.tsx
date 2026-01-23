@@ -1,9 +1,12 @@
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { useI18n } from '@/contexts/I18nContext';
 
 export function CustomerLayout() {
     const { logout, userData } = useAuth();
+    const { t } = useI18n();
     const navigate = useNavigate();
 
     async function handleLogout() {
@@ -26,21 +29,27 @@ export function CustomerLayout() {
                                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                                     <span className="text-white font-bold text-xl">O</span>
                                 </div>
-                                <span className="text-xl font-bold hidden sm:inline">OryxenTech</span>
+                                <span className="text-xl font-bold hidden sm:inline">{t('common.shortName')}</span>
                             </Link>
 
                             <nav className="hidden md:flex items-center gap-4">
                                 <Link to="/app" className="text-sm hover:text-primary transition-colors">
-                                    Dashboard
+                                    {t('nav.dashboard')}
+                                </Link>
+                                <Link to="/app/verify-identity" className="text-sm hover:text-primary transition-colors">
+                                    {t('nav.identity')}
+                                </Link>
+                                <Link to="/app/collateral" className="text-sm hover:text-primary transition-colors">
+                                    {t('nav.collateral')}
                                 </Link>
                                 <Link to="/app/loans" className="text-sm hover:text-primary transition-colors">
-                                    My Loans
+                                    {t('nav.loans')}
                                 </Link>
                                 <Link to="/app/payments" className="text-sm hover:text-primary transition-colors">
-                                    Payments
+                                    {t('nav.payments')}
                                 </Link>
                                 <Link to="/app/help" className="text-sm hover:text-primary transition-colors">
-                                    Help
+                                    {t('nav.help')}
                                 </Link>
                             </nav>
                         </div>
@@ -49,8 +58,9 @@ export function CustomerLayout() {
                             <span className="text-sm text-muted-foreground hidden sm:inline">
                                 {userData?.fullName}
                             </span>
+                            <LanguageSelector />
                             <Button variant="outline" size="sm" onClick={handleLogout}>
-                                Logout
+                                {t('common.logout')}
                             </Button>
                         </div>
                     </div>

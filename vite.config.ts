@@ -18,7 +18,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  // @ts-ignore - Vitest config
+  // @ts-expect-error - Vitest config
   test: {
     globals: true,
     environment: 'jsdom',
