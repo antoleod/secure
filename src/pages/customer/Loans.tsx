@@ -1,23 +1,12 @@
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { collection, query, where, getDocs, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loan } from '@/types';
 import { useI18n } from '@/contexts/I18nContext';
-import {
-    Loader2,
-    AlertTriangle,
-    CheckCircle,
-    Wallet,
-    Calendar,
-    ArrowUpRight,
-    Info,
-    CreditCard,
-    ChevronRight,
-    Search
-} from 'lucide-react';
+import { Loader2, Wallet, ArrowUpRight, Info, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 
 export default function CustomerLoans() {
@@ -209,7 +198,7 @@ export default function CustomerLoans() {
                 <div className="bg-slate-900 p-10 rounded-[3rem] text-white relative overflow-hidden group">
                     <div className="relative z-10">
                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6">
-                            <ShieldCheck className="h-6 w-6 text-blue-400" />
+                            <ShieldCheckIcon className="h-6 w-6 text-blue-400" />
                         </div>
                         <h3 className="text-2xl font-black tracking-tight leading-none mb-4">Entrega de prenda para liquidar</h3>
                         <p className="text-slate-400 text-sm leading-relaxed mb-6">
@@ -225,6 +214,6 @@ export default function CustomerLoans() {
 }
 
 // Missing icon
-const ShieldCheck = (props: any) => (
+const ShieldCheckIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" /><path d="m9 12 2 2 4-4" /></svg>
 )

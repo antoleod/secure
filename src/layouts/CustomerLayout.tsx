@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,9 @@ import {
     HelpCircle,
     LogOut,
     Bell,
-    User,
-    ChevronRight,
-    Search
+    ChevronRight
 } from 'lucide-react';
+import secureIcon from '@/assets/secure-icon.svg';
 
 export function CustomerLayout() {
     const { signOut, userData } = useAuth();
@@ -90,13 +89,10 @@ export function CustomerLayout() {
                             whileTap={{ scale: 0.95 }}
                         >
                             <Link to="/app" className="flex items-center gap-3 group">
-                                <div className="w-10 h-10 bg-slate-900 rounded-[1.25rem] flex items-center justify-center shadow-xl shadow-slate-200 group-hover:shadow-blue-500/20 transition-all duration-500 relative overflow-hidden">
-                                    <motion.div
-                                        className="absolute inset-0 bg-gradient-to-tr from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                                    />
-                                    <span className="text-white font-black text-xl italic z-10">O</span>
+                                <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-200/50 flex items-center justify-center overflow-hidden">
+                                    <img src={secureIcon} alt="Secure logo" className="w-10 h-10" loading="lazy" />
                                 </div>
-                                <span className="font-black text-slate-900 tracking-tighter text-2xl hidden lg:inline-block">Oryxen<span className="text-blue-600">.</span></span>
+                                <span className="font-black text-slate-900 tracking-tight text-2xl hidden lg:inline-block">Secure<span className="text-blue-600">.</span></span>
                             </Link>
                         </motion.div>
 

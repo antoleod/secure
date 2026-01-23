@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
 import { fetchLoyaltyStatus } from '@/lib/firestoreClient';
-import { useI18n } from '@/contexts/I18nContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function CustomerLoyalty() {
     const { user } = useAuth();
-    const { t } = useI18n(); // t function might need valid keys, assuming translations exist or will default string.
 
     const { data: loyalty } = useQuery({
         queryKey: ['loyalty', user?.uid],

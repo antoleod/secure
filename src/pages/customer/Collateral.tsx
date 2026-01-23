@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { listCollaterals, registerCollateralWithRefs, uploadFile } from '@/lib/firestoreClient';
 import { useI18n } from '@/contexts/I18nContext';
+import { Collateral } from '@/types';
 import {
     Plus,
     Smartphone,
@@ -13,20 +14,18 @@ import {
     Package,
     Camera,
     Loader2,
-    CheckCircle,
-    AlertCircle,
     Trash2,
     Image as ImageIcon,
-    ChevronRight,
     ArrowUpRight,
     ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion, AnimatePresence } from 'framer-motion';
+
+type CollateralForm = Pick<Collateral, 'type' | 'brandModel' | 'serialImei' | 'condition' | 'estimatedValue'>;
 
 export default function CustomerCollateral() {
     const { user } = useAuth();
@@ -35,7 +34,7 @@ export default function CustomerCollateral() {
     const [isAdding, setIsAdding] = useState(false);
 
     // Form state
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<CollateralForm>({
         type: 'electronics',
         brandModel: '',
         serialImei: '',
@@ -63,13 +62,15 @@ export default function CustomerCollateral() {
                     if (url) photosRefs.push(url);
                 }
 
-                await registerCollateralWithRefs(user.uid, {
+                const newCollateral: Omit<Collateral, 'id' | 'ownerUid' | 'status' | 'createdAt' | 'updatedAt'> = {
                     ...form,
                     photosRefs,
                     estimatedValue: form.estimatedValue * 100, // Convert to cents
                     checklist: { functional: true, screenIntact: true, noWaterDamage: true },
                     declarations: { isOwner: true, noLiens: true }
-                } as any);
+                };
+
+                await registerCollateralWithRefs(user.uid, newCollateral);
             } finally {
                 setLoading(false);
             }

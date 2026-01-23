@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useI18n } from '@/contexts/I18nContext';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
@@ -13,13 +12,9 @@ import {
     CreditCard,
     Settings,
     History,
-    LogOut,
-    ShieldAlert,
-    Search,
-    HelpCircle,
-    Menu,
-    X
+    LogOut
 } from 'lucide-react';
+import secureIcon from '@/assets/secure-icon.svg';
 
 export function AdminLayout() {
     const { signOut, userData } = useAuth();
@@ -72,14 +67,14 @@ export function AdminLayout() {
                     <div className="flex items-center gap-12">
                         <Link to="/admin" className="flex items-center gap-3 group">
                             <motion.div
-                                whileHover={{ rotate: 90 }}
-                                className="w-10 h-10 bg-indigo-600 rounded-[1.25rem] flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:bg-indigo-500 transition-colors"
+                                whileHover={{ rotate: 10 }}
+                                className="w-11 h-11 rounded-2xl overflow-hidden border border-indigo-500/30 shadow-lg shadow-indigo-500/30 bg-slate-900/80 flex items-center justify-center"
                             >
-                                <ShieldAlert className="text-white h-5 w-5" />
+                                <img src={secureIcon} alt="Secure logo" className="w-9 h-9" loading="lazy" />
                             </motion.div>
-                            <div className="flex flex-col leading-none">
-                                <span className="font-black text-white tracking-[0.3em] text-[10px] uppercase italic">Oryxen Secure</span>
-                                <span className="font-bold text-slate-500 text-[8px] uppercase tracking-widest">Admin Control v2.4</span>
+                            <div className="flex flex-col leading-tight">
+                                <span className="font-black text-white tracking-[0.3em] text-[10px] uppercase">Secure</span>
+                                <span className="font-bold text-indigo-200 text-[9px] uppercase tracking-[0.2em]">Admin Control</span>
                             </div>
                         </Link>
 

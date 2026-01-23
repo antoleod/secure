@@ -1,19 +1,8 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { listAdminRequests, listAllLoans, listAuditLogs } from '@/lib/firestoreClient';
-import {
-    Users,
-    FileText,
-    Wallet,
-    ArrowUpRight,
-    Activity,
-    ShieldAlert,
-    TrendingUp,
-    Users2,
-    Clock,
-    CheckCircle
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { FileText, Wallet, ArrowUpRight, Activity, ShieldAlert, TrendingUp, Users2, Clock, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 

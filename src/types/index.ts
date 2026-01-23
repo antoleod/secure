@@ -197,7 +197,7 @@ export interface AuditLog {
     actorRole: UserRole;
     entityType: 'loan' | 'user' | 'payment' | 'settings';
     entityId?: string;
-    details?: any;
+    details?: Record<string, unknown>;
     timestamp: Timestamp;
 }
 

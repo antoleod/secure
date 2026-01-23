@@ -2,10 +2,6 @@ import { Link } from 'react-router-dom';
 import {
     ShieldCheck,
     Timer,
-    Percent,
-    CheckCircle2,
-    Sparkles,
-    Lock,
     ArrowRight,
     Zap,
     Globe,
@@ -13,7 +9,6 @@ import {
     Smartphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useI18n } from '@/contexts/I18nContext';
 import { motion } from 'framer-motion';

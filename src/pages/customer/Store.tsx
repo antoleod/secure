@@ -5,17 +5,10 @@ import {
     Filter,
     ShoppingBag,
     Zap,
-    ArrowRight,
     Star,
-    Check,
-    Info,
-    Smartphone,
-    Watch,
-    Laptop,
-    Camera
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 

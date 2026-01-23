@@ -3,11 +3,10 @@ import { User, onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
-export interface UserData {
+export interface UserData extends Record<string, unknown> {
   uid: string;
   email: string;
   role: 'admin' | 'customer';
-  [key: string]: any;
 }
 
 export interface AuthContextType {
@@ -19,6 +18,7 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

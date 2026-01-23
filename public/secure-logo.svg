@@ -1,0 +1,41 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Secure brand logo">
+  <defs>
+    <linearGradient id="shieldGradLogo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4cc8ff"/>
+      <stop offset="50%" stop-color="#2486ff"/>
+      <stop offset="100%" stop-color="#0f4fad"/>
+    </linearGradient>
+    <linearGradient id="coinGradLogo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe07a"/>
+      <stop offset="50%" stop-color="#ffb347"/>
+      <stop offset="100%" stop-color="#f58f29"/>
+    </linearGradient>
+    <linearGradient id="lockGradLogo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dfe7f3"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" fill-rule="evenodd" transform="translate(100 120)">
+    <path d="M280 390c-36-17-72.8-40-100-76-17-22-26-55-26-93V96l126-48 126 48v125c0 38-9 71-26 93-27.2 36-64 59-100 76z" fill="url(#shieldGradLogo)"/>
+    <path d="M280 374c-30.8-15-61.5-35.6-84-64-14.6-18.9-22-45.7-22-76.8V110l106-40 106 40v123.2c0 31.1-7.4 57.9-22 76.8-22.5 28.4-53.2 49-84 64z" fill="#0f4fad" opacity=".12"/>
+    <g transform="translate(176 96)">
+      <rect x="20" y="62" width="168" height="132" rx="18" fill="url(#lockGradLogo)" stroke="#c8d4e4" stroke-width="6"/>
+      <path d="M64 76V50c0-43 29-68 76-68s76 25 76 68v26h-36V54c0-26-13-42-40-42s-40 16-40 42v22H64z" fill="#f4f8fc" stroke="#c8d4e4" stroke-width="8" stroke-linejoin="round"/>
+      <circle cx="116" cy="136" r="56" fill="url(#coinGradLogo)" stroke="#f4f8fc" stroke-width="8"/>
+      <circle cx="116" cy="136" r="36" fill="#ffe9a6" stroke="#f5b235" stroke-width="6"/>
+      <path d="M112 104c17 0 30 13.4 30 30 0 16.6-13.4 30-30 30h-12c-2.2 0-4-1.8-4-4v-52c0-2.2 1.8-4 4-4h12z" fill="#ffcf5c"/>
+      <path d="M106 118c-4.4 0-8 3.6-8 8v18c0 4.4 3.6 8 8 8h12c12.7 0 23-10.3 23-23s-10.3-23-23-23h-12z" fill="#fff" opacity=".7"/>
+      <path d="M104 120h18m-18 18h12m-12 18h18" stroke="#f58f29" stroke-width="8" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(330 125)" fill="#1f2f53">
+      <path d="M120 70c0-42.4 32.4-70 74.4-70 35.2 0 60 17.2 66.4 46.8l.8 4.2h-34.4l-.6-2.5c-3.6-15.2-16.4-23.5-32.4-23.5-24.3 0-40.8 16-40.8 44 0 28.2 16.5 44.3 40.8 44.3 15.9 0 29-8.4 32.4-23.5l.6-2.5h34.4l-.8 4.2c-6.3 29.6-31.2 46.8-66.4 46.8-42 0-74.4-27.6-74.4-70z"/>
+      <path d="M302.5 138V72.4c0-26.7 17.6-44.4 44.1-44.4 15.2 0 26.8 6 33.8 17.5h.5V0H414v138h-32.5v-15.1h-.5c-7 11.5-18.6 17.5-33.8 17.5-26.5 0-44.1-17.7-44.1-44.4zm34.1-2.8c0 12.8 8.3 22.5 23.4 22.5 15.1 0 23.4-9.7 23.4-22.5V75.2c0-12.8-8.3-22.5-23.4-22.5-15.1 0-23.4 9.7-23.4 22.5v59.9z"/>
+      <path d="M472 44h32.5v17.1h.5c5.9-12.8 16.3-20.3 32-20.3 21.4 0 34 14.2 34 38.4V138H538V83.6c0-12.5-6.3-20.2-17.7-20.2-12.5 0-20.3 9.2-20.3 24.5V138H472V44z"/>
+      <path d="M612 95.8c2.1 14 11.9 23.6 27.1 23.6 12.7 0 19.7-5.8 22.5-14.8h32.8c-4.9 25.7-27 41.4-55.7 41.4-37.5 0-60.6-26.6-60.6-70.1 0-42.4 25.4-70 60.1-70 37.8 0 59.3 28.6 59.3 69.7 0 2.9-.2 9.3-.2 10.2H612zm53.9-21.3c-1.1-13-10-22.7-24.9-22.7-14.6 0-23.6 9.7-25.9 22.7h50.8z"/>
+      <path d="M744.5 44H777v16.5h.5c7.1-11.9 17.5-19.7 33.6-19.7 23.6 0 39.9 16.2 39.9 43.3V138H818V89.8c0-13.3-8.2-22.4-20.5-22.4-14.1 0-23 11.2-23 25.6V138h-30V44z"/>
+      <path d="M924 92.5c0-29.7 17.9-45.3 44.2-45.3 13.7 0 24.6 5.9 30.6 15h.5V0h30v138h-30v-13h-.5c-6.1 9.1-16.9 15-30.6 15-26.3 0-44.2-15.6-44.2-45.5zm34.1-2.1c0 14.8 9 25.2 24.3 25.2 15.3 0 24.3-10.4 24.3-25.2 0-14.8-9-25.2-24.3-25.2-15.3 0-24.3 10.4-24.3 25.2z"/>
+    </g>
+    <text x="430" y="280" fill="#5e6475" font-family="Segoe UI, sans-serif" font-size="46" font-weight="600">Pawn &amp; Collateral Loans</text>
+  </g>
+</svg>
+

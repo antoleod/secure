@@ -12,7 +12,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-import { User as UserType, UserRole } from '../types';
+import { User as UserType } from '../types';
 
 export interface AuthContextType {
   user: User | null;
@@ -31,6 +31,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const SUPER_ADMINS = ['jdioses@outlook.be', 'antoleod@gmail.com'];
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -40,48 +41,50 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const hasInvalidConfig = !auth || !db;
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserType | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(!hasInvalidConfig);
+  const [error, setError] = useState<string | null>(
+    hasInvalidConfig ? 'La configuracion de Firebase es invalida. Revisa las variables de entorno.' : null
+  );
 
   useEffect(() => {
-    if (!auth || !db) {
-      setError('La configuración de Firebase es inválida. Revisa las variables de entorno.');
-      setLoading(false);
-      return;
-    }
+    if (hasInvalidConfig) return;
 
     let unsubscribeUserData: Unsubscribe | null = null;
 
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribeAuth = onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser);
 
-      // Clean up previous listener if it exists
       if (unsubscribeUserData) {
         unsubscribeUserData();
         unsubscribeUserData = null;
       }
 
-      if (user) {
-        const docRef = doc(db, 'users', user.uid);
-        unsubscribeUserData = onSnapshot(docRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data() as UserType;
-            if (user.email && SUPER_ADMINS.includes(user.email) && data.role !== 'admin') {
-              setUserData({ ...data, role: 'admin' });
+      if (nextUser) {
+        const docRef = doc(db, 'users', nextUser.uid);
+        unsubscribeUserData = onSnapshot(
+          docRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data() as UserType;
+              if (nextUser.email && SUPER_ADMINS.includes(nextUser.email) && data.role !== 'admin') {
+                setUserData({ ...data, role: 'admin' });
+              } else {
+                setUserData(data);
+              }
             } else {
-              setUserData(data);
+              setUserData(null);
             }
-          } else {
+            setLoading(false);
+          },
+          (err) => {
+            console.error('Error listening to user data:', err);
             setUserData(null);
+            setLoading(false);
           }
-          setLoading(false);
-        }, (err) => {
-          console.error("Error listening to user data:", err);
-          setUserData(null);
-          setLoading(false);
-        });
+        );
       } else {
         setUserData(null);
         setLoading(false);
@@ -92,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribeAuth();
       if (unsubscribeUserData) unsubscribeUserData();
     };
-  }, []);
+  }, [hasInvalidConfig]);
 
   const handleError = (err: unknown) => {
     const firebaseError = err as AuthError;
@@ -100,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     switch (firebaseError.code) {
       case 'auth/invalid-email':
-        setError('El correo electrónico no es válido.');
+        setError('El correo electronico no es valido.');
         break;
       case 'auth/user-disabled':
         setError('Este usuario ha sido deshabilitado.');
@@ -111,16 +114,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError('Credenciales incorrectas.');
         break;
       case 'auth/email-already-in-use':
-        setError('El correo ya está registrado.');
+        setError('El correo ya esta registrado.');
         break;
       case 'auth/weak-password':
-        setError('La contraseña es muy débil (mínimo 6 caracteres).');
+        setError('La contrasena es muy debil (minimo 6 caracteres).');
         break;
       case 'auth/popup-closed-by-user':
-        setError('Se cerró la ventana de inicio de sesión.');
+        setError('Se cerro la ventana de inicio de sesion.');
         break;
       default:
-        setError('Ocurrió un error al autenticar. Intenta de nuevo.');
+        setError('Ocurrio un error al autenticar. Intenta de nuevo.');
     }
   };
 

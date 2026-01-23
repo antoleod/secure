@@ -7,16 +7,11 @@ import {
     Loader2,
     Upload,
     CheckCircle,
-    AlertTriangle,
     User,
-    Phone,
-    Mail,
-    Calendar,
     MapPin,
     Save,
     ShieldCheck,
     Camera,
-    ChevronRight,
     Fingerprint,
     Info
 } from 'lucide-react';
@@ -47,7 +42,6 @@ export default function CustomerIdentity() {
     const [backFile, setBackFile] = useState<File | null>(null);
     const [selfieFile, setSelfieFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
-    const [kycError, setKycError] = useState<string | null>(null);
 
     useEffect(() => {
         if (userData) {
@@ -93,7 +87,6 @@ export default function CustomerIdentity() {
             setFrontFile(null);
             setBackFile(null);
             setSelfieFile(null);
-            setKycError(null);
         }
     });
 
@@ -105,7 +98,7 @@ export default function CustomerIdentity() {
         try {
             await updateProfile(user.uid, profileForm);
             setProfileMsg({ type: 'success', text: t('identity.personal.success') });
-        } catch (err) {
+        } catch {
             setProfileMsg({ type: 'error', text: t('identity.personal.error') });
         } finally {
             setProfileSaving(false);

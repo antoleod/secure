@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { GlobalSettings } from '@/types';
 import { Save, Loader2 } from 'lucide-react';
@@ -45,12 +43,15 @@ export default function AdminSettings() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
-        // @ts-ignore
-        const checked = e.target.checked;
-
+        const nextValue =
+            type === 'checkbox'
+                ? (e.target as HTMLInputElement).checked
+                : type === 'number'
+                    ? Number(value)
+                    : value;
         setSettings((prev) => ({
             ...prev,
-            [name]: type === 'number' ? Number(value) : type === 'checkbox' ? checked : value,
+            [name]: nextValue,
         }));
     };
 

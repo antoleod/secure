@@ -1,0 +1,31 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Secure shield icon">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4cc8ff"/>
+      <stop offset="50%" stop-color="#2486ff"/>
+      <stop offset="100%" stop-color="#0f4fad"/>
+    </linearGradient>
+    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffe07a"/>
+      <stop offset="50%" stop-color="#ffb347"/>
+      <stop offset="100%" stop-color="#f58f29"/>
+    </linearGradient>
+    <linearGradient id="lockGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dfe7f3"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" fill-rule="evenodd">
+    <path d="M256 484c-54-25-109.2-59-150-112-25-32-38-80-38-136V110l188-72 188 72v126c0 56-13 104-38 136-40.8 53-96 87-150 112z" fill="url(#shieldGrad)"/>
+    <path d="M256 464c-46.5-22-93.6-52.7-127-96-22-28-34-69-34-118V128l161-62 161 62v122c0 49-12 90-34 118-33.4 43.3-80.5 74-127 96z" fill="#0f4fad" opacity=".12"/>
+    <g transform="translate(140 150)">
+      <rect x="28" y="94" width="176" height="138" rx="18" fill="url(#lockGrad)" stroke="#c8d4e4" stroke-width="6"/>
+      <path d="M74 106v-34c0-47 31-74 82-74s82 27 82 74v34h-36v-32c0-28-16-44-46-44s-46 16-46 44v32H74z" fill="#f4f8fc" stroke="#c8d4e4" stroke-width="8" stroke-linejoin="round"/>
+      <circle cx="116" cy="164" r="60" fill="url(#coinGrad)" stroke="#f4f8fc" stroke-width="8"/>
+      <circle cx="116" cy="164" r="38" fill="#ffe9a6" stroke="#f5b235" stroke-width="6"/>
+      <path d="M115 124c18 0 32 14.3 32 32 0 17.7-14 32-32 32h-12c-2.2 0-4-1.8-4-4v-56c0-2.2 1.8-4 4-4h12z" fill="#ffcf5c"/>
+      <path d="M110 142c-4.4 0-8 3.6-8 8v20c0 4.4 3.6 8 8 8h12c13.3 0 24-10.7 24-24s-10.7-24-24-24h-12z" fill="#fff" opacity=".7"/>
+      <path d="M106 144h18m-18 18h12m-12 18h18" stroke="#f58f29" stroke-width="8" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

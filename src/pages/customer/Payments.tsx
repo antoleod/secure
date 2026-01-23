@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { listLoansForUser, submitPayment, uploadFile } from '@/lib/firestoreClient';
+import { listLoansForUser, submitPayment } from '@/lib/firestoreClient';
 import { useI18n } from '@/contexts/I18nContext';
+import { Payment } from '@/types';
 import {
     CreditCard,
     Upload,
@@ -10,10 +11,7 @@ import {
     Loader2,
     CheckCircle,
     ArrowUpRight,
-    FileText,
-    AlertCircle,
     Info,
-    Calendar,
     Wallet,
     ChevronDown
 } from 'lucide-react';
@@ -28,11 +26,16 @@ export default function CustomerPayments() {
     const queryClient = useQueryClient();
     const { t } = useI18n();
 
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<{
+        loanId: string;
+        amountCents: number;
+        method: Payment['method'];
+        proofFile: File | null;
+    }>({
         loanId: '',
         amountCents: 0,
         method: 'bank_transfer',
-        proofFile: null as File | null,
+        proofFile: null,
     });
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -51,7 +54,7 @@ export default function CustomerPayments() {
                 await submitPayment(user.uid, {
                     loanId: form.loanId,
                     amountCents: Math.round(form.amountCents * 100),
-                    method: form.method as any,
+                    method: form.method,
                     type: 'mixed',
                     proofFile: form.proofFile || undefined,
                 });

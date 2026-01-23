@@ -38,7 +38,6 @@ import {
     Payment,
     PaymentStatus,
     User as UserType,
-    UserRole
 } from '@/types';
 // import { calculateMonthlyPayment, calculateTotalRepayment } from './finance'; // Commented out as finance logic might need update, doing simple calc for now or ignoring
 
@@ -64,38 +63,38 @@ export async function submitKyc(uid: string, payload: { frontIdRef: string; back
 
 export async function registerCollateral(
     ownerUid: string,
-    payload: Omit<Collateral, 'id' | 'ownerUid' | 'status' | 'createdAt' | 'updatedAt' | 'photosRefs' | 'videoRef' | 'appraisalValue' | 'appraisedBy' | 'appraisedAt' | 'isForSale' | 'salePriceCents' | 'publicTitle' | 'publicDescription' | 'soldAt' | 'buyerUid'> & {
-        photos?: File[],
-        video?: File
+    payload: Omit<
+        Collateral,
+        | 'id'
+        | 'ownerUid'
+        | 'status'
+        | 'createdAt'
+        | 'updatedAt'
+        | 'photosRefs'
+        | 'videoRef'
+        | 'appraisalValue'
+        | 'appraisedBy'
+        | 'appraisedAt'
+        | 'isForSale'
+        | 'salePriceCents'
+        | 'publicTitle'
+        | 'publicDescription'
+        | 'soldAt'
+        | 'buyerUid'
+    > & {
+        photosRefs?: string[];
+        videoRef?: string;
     }
 ) {
-    // Handle uploads first? Or caller handles uploads and passes refs?
-    // Start with empty refs, let caller handle upload logic separately or improve this later.
-    // For now assuming the caller might pass refs if we change signature, OR we handle uploads here.
-    // Let's assume the payload passed INCLUDES refs (caller uploads first) OR we simplify and only support text data here and uploads are separate.
-    // But wait, the previous code had inputs. Let's make it accept the DATA conformant to Collateral interface (except auto fields).
-
-    // Actually, to make it compile, let's allow partial input and fill defaults.
-    // But better: Let's make it strict.
-
-    // We will assume the Component handles the File Upload -> URL/Path conversion to keep this client clean, 
-    // OR we provide a helper. 
-    // Given the previous code didn't have multi-file upload, let's stick to: The caller passes the string refs.
-
-    const { photos, video, ...data } = payload as any; // Temporary to extract files if passed, though type signature above suggests we might want to handle it.
-
-    // Actually, let's keep it simple: Caller provides refs.
-    // We will change the signature to expect refs.
-
     const collRef = collection(db, 'collaterals').withConverter(collateralConverter);
     const docRef = await addDoc(collRef, {
-        ...data,
-        photosRefs: data.photosRefs || [], // Caller must provide or we default to empty
+        ...payload,
+        photosRefs: payload.photosRefs ?? [],
         ownerUid,
         status: 'pending',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-    } as unknown as Collateral); // Cast to silence partial mismatch if any, relying on converter validation at runtime if needed, but TypeScript check should pass if generic is correct.
+    });
 
     // Note: The above is a bit loose. Let's try to be strictly typed.
     /*
