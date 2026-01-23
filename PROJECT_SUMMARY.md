@@ -4,6 +4,8 @@
 
 You now have a production-ready, full-stack React loan management platform with:
 
+> Seguridad: usa `.env.example` como plantilla y mantén las credenciales fuera del control de versiones. Borra cualquier `.env` previo que contenga valores reales.
+
 ### Core Infrastructure
 - ✅ React 19 + TypeScript + Vite
 - ✅ HashRouter (GitHub Pages compatible)

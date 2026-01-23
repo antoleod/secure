@@ -17,10 +17,20 @@ coverage
 *.lcov
 .nyc_output
 
-# Production
+# Production artifacts
 dist
 dist-ssr
 *.local
+
+# Environment variables
+.env
+.env.*
+!.env.example
+firebase-service-account*.json
+serviceAccount*.json
+*.pem
+*.p12
+*.key
 
 # Editor directories and files
 .vscode/*

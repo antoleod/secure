@@ -2,6 +2,8 @@
 
 This guide provides detailed implementation steps for the stubbed-out features.
 
+> Nota de seguridad: usa `.env.example` como plantilla y mantén las credenciales fuera del repositorio. No comitees `.env` ni valores reales.
+
 ## 📝 General Pattern for New Pages
 
 All new pages should follow this structure:
