@@ -46,9 +46,6 @@ service cloud.firestore {
     // =================================
 
     // --- Usuarios ---
-    // Los usuarios pueden leer y actualizar su propio perfil.
-    // Los administradores pueden leer cualquier perfil.
-    // Nadie puede cambiar su propio rol.
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId);
@@ -56,70 +53,56 @@ service cloud.firestore {
     }
 
     // --- KYC (Know Your Customer) ---
-    // El cliente puede crear y leer su propio KYC.
-    // El admin puede leer el KYC de cualquier cliente.
     match /kyc/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create, update: if isOwner(userId);
     }
 
     // --- Solicitudes de Préstamo ---
-    // Los clientes pueden crear solicitudes para sí mismos.
-    // El cliente dueño y los admins pueden leerlas.
-    // Los admins pueden actualizarlas (aprobar/rechazar).
-    match /loanRequests/{requestId} {
-      allow read: if isAdmin() || get(path).data.customerUid == request.auth.uid;
+    match /loan_requests/{requestId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.customerUid == request.auth.uid);
       allow create: if isCustomer() && request.resource.data.customerUid == request.auth.uid;
-      allow update: if isAdmin() || (get(path).data.customerUid == request.auth.uid && !('status' in request.resource.data)); // Cliente puede actualizar (ej. firma), pero no el estado.
+      allow update: if isAdmin() || (resource.data.customerUid == request.auth.uid && !('status' in request.resource.data));
     }
 
     // --- Préstamos ---
-    // Solo los admins pueden crearlos y actualizarlos.
-    // El cliente dueño y los admins pueden leerlos.
     match /loans/{loanId} {
-      allow read: if isAdmin() || get(path).data.customerUid == request.auth.uid;
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.customerUid == request.auth.uid);
       allow create, update: if isAdmin();
     }
 
     // --- Garantías (Collateral) ---
-    // Los clientes pueden registrar sus propias garantías.
-    // El dueño y los admins pueden leerlas.
-    // Solo los admins pueden actualizar su estado (ej. avalúo).
     match /collaterals/{collateralId} {
-      allow read: if isAdmin() || get(path).data.ownerUid == request.auth.uid;
+      // Permitir leer si es admin, dueño, o si el artículo está a la venta (Marketplace)
+      allow read: if isAdmin() || 
+                    (isAuthenticated() && resource.data.ownerUid == request.auth.uid) ||
+                    (resource.data.isForSale == true);
+      
       allow create: if isCustomer() && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isAdmin();
     }
 
     // --- Pagos ---
-    // Los clientes pueden crear registros de pago para sus préstamos.
-    // El dueño y los admins pueden leerlos.
-    // Solo los admins pueden confirmar/rechazar pagos.
     match /payments/{paymentId} {
-      allow read: if isAdmin() || get(path).data.customerUid == request.auth.uid;
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.customerUid == request.auth.uid);
       allow create: if isCustomer() && request.resource.data.customerUid == request.auth.uid;
       allow update: if isAdmin();
     }
 
     // --- Lealtad (Loyalty) ---
-    // El usuario puede leer su propio estado de lealtad.
-    // Solo los admins (o funciones de backend) pueden actualizarlo.
     match /users/{userId}/loyalty/{doc} {
-       allow read: if isOwner(userId);
+       allow read: if isOwner(userId) || isAdmin();
        allow write: if isAdmin();
     }
 
     // --- Configuración Global ---
-    // Todos los usuarios autenticados pueden leerla (para simulador, etc.).
-    // Solo los admins pueden modificarla.
     match /settings/global {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
     // --- Bitácora de Auditoría ---
-    // Solo los admins pueden leer y escribir en la bitácora.
-    match /auditLogs/{logId} {
+    match /audit_logs/{logId} {
       allow read, write: if isAdmin();
     }
   }

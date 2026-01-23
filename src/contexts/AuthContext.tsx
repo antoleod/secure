@@ -10,7 +10,7 @@ import {
   sendPasswordResetEmail,
   AuthError,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { User as UserType, UserRole } from '../types';
 
@@ -46,46 +46,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Si Firebase no se inicializó, no hacer nada y mostrar error.
     if (!auth || !db) {
       setError('La configuración de Firebase es inválida. Revisa las variables de entorno.');
       setLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        try {
-          const docRef = doc(db, 'users', user.uid);
-          const docSnap = await getDoc(docRef);
+    let unsubscribeUserData: Unsubscribe | null = null;
 
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+
+      // Clean up previous listener if it exists
+      if (unsubscribeUserData) {
+        unsubscribeUserData();
+        unsubscribeUserData = null;
+      }
+
+      if (user) {
+        const docRef = doc(db, 'users', user.uid);
+        unsubscribeUserData = onSnapshot(docRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data() as UserType;
-            // Force Admin Check
             if (user.email && SUPER_ADMINS.includes(user.email) && data.role !== 'admin') {
-              // Do not attempt to update Firestore to avoid permission issues; trust the email for elevated UI.
               setUserData({ ...data, role: 'admin' });
             } else {
               setUserData(data);
             }
           } else {
-            // Document doesn't exist? Should catch this or handle it. 
-            // Possibly create it if creating from strict Auth providers but absent in DB?
-            // For now just null.
             setUserData(null);
           }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
+          setLoading(false);
+        }, (err) => {
+          console.error("Error listening to user data:", err);
           setUserData(null);
-        }
+          setLoading(false);
+        });
       } else {
         setUserData(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUserData) unsubscribeUserData();
+    };
   }, []);
 
   const handleError = (err: unknown) => {
@@ -147,7 +153,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
 
       await setDoc(doc(db, 'users', cred.user.uid), newUser);
-      setUserData(newUser);
     } catch (err) {
       handleError(err);
       throw err;
@@ -177,15 +182,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           createdAt: Timestamp.now(),
         };
         await setDoc(docRef, newUser);
-        setUserData(newUser);
-      } else {
-        // Check for super admin promotion
-        const data = docSnap.data() as UserType;
-        if (SUPER_ADMINS.includes(userEmail) && data.role !== 'admin') {
-          setUserData({ ...data, role: 'admin' });
-        } else {
-          setUserData(data);
-        }
       }
     } catch (err) {
       handleError(err);

@@ -37,6 +37,7 @@ import {
     LoanRequestStatus,
     Payment,
     PaymentStatus,
+    User as UserType,
     UserRole
 } from '@/types';
 // import { calculateMonthlyPayment, calculateTotalRepayment } from './finance'; // Commented out as finance logic might need update, doing simple calc for now or ignoring
@@ -434,4 +435,12 @@ export async function fetchKyc(uid: string) {
     const ref = doc(db, 'kyc', uid).withConverter(kycConverter);
     const snap = await getDoc(ref);
     return snap.exists() ? (snap.data() as KYC) : null;
+}
+
+export async function updateProfile(uid: string, data: Partial<UserType>) {
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, {
+        ...data,
+        updatedAt: Timestamp.now(),
+    });
 }

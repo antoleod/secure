@@ -4,14 +4,25 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useI18n } from '@/contexts/I18nContext';
-import { Menu, X, LayoutDashboard, Users, FileText, Wallet, CreditCard, Settings, History, LogOut, Shield } from 'lucide-react';
+import {
+    LayoutDashboard,
+    Users,
+    FileText,
+    Wallet,
+    CreditCard,
+    Settings,
+    History,
+    LogOut,
+    ShieldAlert,
+    Search,
+    HelpCircle
+} from 'lucide-react';
 
 export function AdminLayout() {
     const { signOut, userData } = useAuth();
     const { t } = useI18n();
     const navigate = useNavigate();
     const location = useLocation();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     async function handleLogout() {
         try {
@@ -22,126 +33,120 @@ export function AdminLayout() {
         }
     }
 
-    const navLinks = [
-        { to: '/admin', label: t('nav.dashboard'), icon: LayoutDashboard },
+    // Main operational links for the BOTTOM DOCK
+    const footerLinks = [
+        { to: '/admin', label: 'Panel', icon: LayoutDashboard },
         { to: '/admin/clients', label: 'Clientes', icon: Users },
-        { to: '/admin/requests', label: t('nav.requests'), icon: FileText },
-        { to: '/admin/loans', label: t('nav.loans'), icon: Wallet },
+        { to: '/admin/requests', label: 'Pedidos', icon: FileText },
+        { to: '/admin/loans', label: 'Préstamos', icon: Wallet },
         { to: '/admin/payments', label: 'Pagos', icon: CreditCard },
-        { to: '/admin/settings', label: t('nav.settings'), icon: Settings },
-        { to: '/admin/audit', label: t('nav.audit'), icon: History },
+    ];
+
+    // Administrative & config links for the HEADER
+    const headerLinks = [
+        { to: '/admin/settings', label: 'Ajustes', icon: Settings },
+        { to: '/admin/audit', label: 'Auditoría', icon: History },
+        { to: '/app/help', label: 'Soporte', icon: HelpCircle },
     ];
 
     const isActive = (path: string) => location.pathname === path;
 
     return (
-        <div className="min-h-screen bg-[#fcfaff]">
-            {/* Header */}
-            <header className="border-b bg-white/70 backdrop-blur-md sticky top-0 z-50">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-8">
-                            <Link to="/admin" className="flex items-center gap-2 group">
-                                <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200 group-hover:scale-105 transition-transform">
-                                    <Shield className="text-white h-6 w-6" />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 to-purple-700 hidden sm:inline tracking-tighter leading-none">
-                                        ADMIN
-                                    </span>
-                                    <span className="text-[10px] font-bold text-slate-400 hidden sm:inline tracking-[0.2em]">CONTROL PANEL</span>
-                                </div>
-                            </Link>
-
-                            {/* Desktop Nav */}
-                            <nav className="hidden lg:flex items-center gap-1">
-                                {navLinks.map((link) => (
-                                    <Link
-                                        key={link.to}
-                                        to={link.to}
-                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all hover:bg-purple-50 ${isActive(link.to)
-                                                ? 'text-purple-600 bg-purple-50/80 font-bold'
-                                                : 'text-slate-600'
-                                            }`}
-                                    >
-                                        {link.label}
-                                    </Link>
-                                ))}
-                            </nav>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <div className="hidden sm:flex flex-col items-end mr-2">
-                                <span className="text-sm font-bold text-slate-900">{userData?.fullName}</span>
-                                <span className="text-[10px] uppercase tracking-widest text-purple-600 font-black">Super Administrador</span>
+        <div className="min-h-screen bg-[#f8f9fc] flex flex-col pb-24 md:pb-28">
+            {/* Admin Header with Config & Language */}
+            <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
+                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-6">
+                        <Link to="/admin" className="flex items-center gap-2 mr-2">
+                            <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                                <ShieldAlert className="text-white h-5 w-5" />
                             </div>
+                            <span className="font-black text-white tracking-widest text-[10px] uppercase italic hidden sm:inline">Admin Portal</span>
+                        </Link>
 
-                            <div className="hidden sm:block">
-                                <LanguageSelector />
-                            </div>
-
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="hidden sm:flex text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                onClick={handleLogout}
-                            >
-                                <LogOut className="h-5 w-5" />
-                            </Button>
-
-                            {/* Mobile menu button */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="lg:hidden text-slate-600"
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            >
-                                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Mobile Navigation Panel */}
-                {isMenuOpen && (
-                    <div className="lg:hidden border-t bg-white animate-in slide-in-from-top duration-300">
-                        <div className="container mx-auto px-4 py-4 space-y-1">
-                            {navLinks.map((link) => (
+                        {/* Desktop Admin Header Links */}
+                        <nav className="hidden md:flex items-center gap-1">
+                            {headerLinks.map((link) => (
                                 <Link
                                     key={link.to}
                                     to={link.to}
-                                    onClick={() => setIsMenuOpen(false)}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive(link.to)
-                                            ? 'bg-purple-50 text-purple-700 font-bold'
-                                            : 'text-slate-600 hover:bg-slate-50'
+                                    className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${isActive(link.to)
+                                            ? 'bg-indigo-500/20 text-indigo-400'
+                                            : 'text-slate-400 hover:text-white hover:bg-white/5'
                                         }`}
                                 >
-                                    <link.icon className={`h-5 w-5 ${isActive(link.to) ? 'text-purple-600' : 'text-slate-400'}`} />
-                                    <span>{link.label}</span>
+                                    {link.label}
                                 </Link>
                             ))}
-                            <div className="pt-4 mt-4 border-t flex items-center justify-between px-4">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-600 text-xs">
-                                        {userData?.fullName?.charAt(0)}
-                                    </div>
-                                    <span className="text-sm font-medium text-slate-700 truncate max-w-[150px]">{userData?.fullName}</span>
-                                </div>
-                                <Button variant="outline" size="sm" onClick={handleLogout} className="text-red-600 border-red-100 hover:bg-red-50">
-                                    {t('common.logout')}
-                                </Button>
-                            </div>
-                        </div>
+                        </nav>
                     </div>
-                )}
+
+                    <div className="flex items-center gap-3">
+                        <div className="hidden md:flex items-center gap-1 mr-2 border-r border-slate-700 pr-2">
+                            <LanguageSelector />
+                        </div>
+
+                        <div className="hidden sm:flex flex-col items-end px-2">
+                            <span className="text-xs font-bold text-white leading-none">{userData?.fullName}</span>
+                            <span className="text-[9px] text-indigo-400 font-black uppercase tracking-widest mt-1">Super Admin</span>
+                        </div>
+
+                        <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-indigo-400 text-sm overflow-hidden ring-2 ring-slate-800 shadow-lg">
+                            {userData?.fullName?.charAt(0)}
+                        </div>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-slate-500 hover:text-white hover:bg-slate-800 rounded-full"
+                            onClick={handleLogout}
+                        >
+                            <LogOut className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
             </header>
 
-            {/* Main Content */}
-            <main className="container mx-auto px-4 py-8">
-                <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 min-h-[calc(100vh-160px)] p-6 md:p-8">
+            {/* Main Content Area */}
+            <main className="flex-1 container mx-auto px-4 py-6 md:py-10">
+                <div className="animate-in fade-in zoom-in-95 duration-500">
                     <Outlet />
                 </div>
             </main>
+
+            {/* PROFESSIONAL BOTTOM NAVIGATION (ADMIN DOCK) */}
+            <nav className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pointer-events-none">
+                <div className="container mx-auto max-w-2xl pointer-events-auto">
+                    <div className="bg-white/80 backdrop-blur-2xl border border-slate-200/50 shadow-[0_20px_60px_rgba(15,23,42,0.15)] rounded-[2.5rem] p-2 flex items-center justify-around">
+                        {footerLinks.map((link) => {
+                            const active = isActive(link.to);
+                            const Icon = link.icon;
+                            return (
+                                <Link
+                                    key={link.to}
+                                    to={link.to}
+                                    className={`
+                                        relative group flex flex-col items-center justify-center 
+                                        min-w-[4.8rem] py-3 rounded-[1.8rem] transition-all duration-300
+                                        ${active ? 'bg-indigo-600 shadow-xl shadow-indigo-100' : 'hover:bg-slate-100'}
+                                    `}
+                                >
+                                    <Icon className={`
+                                        h-5 w-5 mb-1 transition-all duration-300
+                                        ${active ? 'text-white' : 'text-slate-400 group-hover:text-slate-900'}
+                                    `} />
+                                    <span className={`
+                                        text-[9px] uppercase font-black tracking-wider transition-all
+                                        ${active ? 'text-white' : 'text-slate-400 group-hover:text-slate-900'}
+                                    `}>
+                                        {link.label}
+                                    </span>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                </div>
+            </nav>
         </div>
     );
 }
