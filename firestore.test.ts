@@ -10,15 +10,23 @@ import * as fs from 'fs';
 
 // Lee las reglas locales
 const rules = fs.readFileSync('firestore.rules', 'utf8');
+const emulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
+const shouldSkip = !emulatorHost;
+const [host, portString] = emulatorHost ? emulatorHost.replace('http://', '').split(':') : [];
 
-describe('Reglas de Seguridad de Firestore', () => {
+// Skip completo si no hay emulador disponible en CI/local
+(shouldSkip ? describe.skip : describe)('Reglas de Seguridad de Firestore', () => {
     let testEnv: RulesTestEnvironment;
 
     beforeAll(async () => {
         // Inicializa el entorno de pruebas conectado al emulador local
         testEnv = await initializeTestEnvironment({
             projectId: 'demo-secure-oryxen',
-            firestore: { rules },
+            firestore: emulatorHost ? {
+                rules,
+                host,
+                port: Number(portString),
+            } : { rules },
         });
     });
 
