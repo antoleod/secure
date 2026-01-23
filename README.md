@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # OryxenTech Collateral Loans
 
 Collateral-backed loan web app (React + Firebase) with auditable, role-based access. All monetary values are stored as integer cents.
@@ -145,3 +146,6 @@ Collateral-backed loan web app (React + Firebase) with auditable, role-based acc
 
 ### Commandes
 - `npm run dev`, `npm run lint`, `npm run test`, `npm run test:rules`, `npm run build`
+=======
+
+>>>>>>> d0f047448a2cab53d805f924e7546c4023af698b
