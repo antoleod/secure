@@ -26,28 +26,18 @@ const requiredKeys = [
 
 const missingKeys = requiredKeys.filter(key => !firebaseConfig[key]);
 
-// Inicializamos variables para exportar
-let app: FirebaseApp | undefined;
-let auth: Auth | undefined;
-let db: Firestore | undefined;
-let storage: FirebaseStorage | undefined;
-let analytics: Promise<Analytics | null> = Promise.resolve(null);
-
 if (missingKeys.length > 0) {
-  console.error(
+  throw new Error(
     `Falta configuración de Firebase: ${missingKeys.join(', ')}. Verifica tu archivo .env.local`
   );
-} else {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-    analytics = isSupported().then(yes => yes ? getAnalytics(app!) : null);
-  } catch (error) {
-    console.error('Error inicializando Firebase:', error);
-  }
 }
+
+// Inicializamos y exponemos instancias tipadas no opcionales para evitar checks en toda la app
+const app: FirebaseApp = initializeApp(firebaseConfig);
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
+const storage: FirebaseStorage = getStorage(app);
+const analytics: Promise<Analytics | null> = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
 
 export { app, auth, db, storage, analytics };
 export const ENABLE_UPLOADS = import.meta.env.VITE_ENABLE_UPLOADS === 'true';
