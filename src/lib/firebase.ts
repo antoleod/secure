@@ -33,11 +33,24 @@ if (missingKeys.length > 0) {
 }
 
 // Inicializamos y exponemos instancias tipadas no opcionales para evitar checks en toda la app
+// Inicializamos y exponemos instancias tipadas no opcionales para evitar checks en toda la app
 const app: FirebaseApp = initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 const analytics: Promise<Analytics | null> = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
+
+// Conexión a Emuladores
+if (import.meta.env.VITE_USE_EMULATORS === 'true') {
+  console.warn('⚠️ Usando Firebase Emulators');
+  const { connectAuthEmulator } = await import('firebase/auth');
+  const { connectFirestoreEmulator } = await import('firebase/firestore');
+  const { connectStorageEmulator } = await import('firebase/storage');
+
+  connectAuthEmulator(auth, 'http://localhost:9099');
+  connectFirestoreEmulator(db, 'localhost', 8080);
+  connectStorageEmulator(storage, 'localhost', 9199);
+}
 
 export { app, auth, db, storage, analytics };
 export const ENABLE_UPLOADS = import.meta.env.VITE_ENABLE_UPLOADS === 'true';

@@ -10,6 +10,13 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isSuperAdminEmail() {
+      return request.auth.token.email in [
+        'jdioses@outlook.be',
+        'antoleod@gmail.com'
+      ];
+    }
+
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
@@ -19,7 +26,10 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isAuthenticated() && getUserRole(request.auth.uid) == 'admin';
+      return isAuthenticated() && (
+        isSuperAdminEmail() ||
+        getUserRole(request.auth.uid) == 'admin'
+      );
     }
 
     function isCustomer() {

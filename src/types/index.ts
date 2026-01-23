@@ -11,7 +11,8 @@ export interface User {
     fullName: string;
     email: string;
     phone: string;
-    dob: string; // ISO date string
+    dob: string;
+    addressCityPostal: string;
     createdAt: Timestamp;
     updatedAt?: Timestamp;
 }
@@ -21,107 +22,154 @@ export type KYCStatus = 'pending' | 'verified' | 'rejected';
 
 export interface KYC {
     uid: string;
-    idType: 'passport' | 'national_id' | 'drivers_license';
-    idNumber: string;
-    idExpiryDate: string; // ISO date string
-    address: string;
-    city: string;
-    postalCode: string;
-    country: string;
+    frontIdRef: string;
+    backIdRef: string;
+    selfieRef?: string;
     status: KYCStatus;
     verifiedAt?: Timestamp;
     verifiedBy?: string;
+    rejectionReason?: string;
     createdAt: Timestamp;
     updatedAt?: Timestamp;
 }
 
 // Collateral types
 export type CollateralType = 'vehicle' | 'property' | 'jewelry' | 'electronics' | 'other';
-export type CollateralStatus = 'pending' | 'approved' | 'rejected';
+export type CollateralStatus = 'pending' | 'approved' | 'rejected' | 'in_stock' | 'sold';
 
 export interface Collateral {
     id?: string;
     ownerUid: string;
     type: CollateralType;
-    description: string;
+    brandModel: string;
+    serialImei: string;
+    condition: string;
+    checklist: Record<string, boolean>;
+    declarations: Record<string, boolean>;
     estimatedValue: number; // in cents
     status: CollateralStatus;
-    images?: string[]; // Storage URLs
-    appraisalValue?: number; // in cents
+    photosRefs: string[];
+    videoRef?: string;
+    appraisalValue?: number;
     appraisedBy?: string;
     appraisedAt?: Timestamp;
+
+    // Marketplace fields
+    isForSale?: boolean;
+    salePriceCents?: number;
+    publicTitle?: string;
+    publicDescription?: string;
+    soldAt?: Timestamp;
+    buyerUid?: string;
+
     createdAt: Timestamp;
     updatedAt?: Timestamp;
 }
 
 // Loan Request types
-export type LoanRequestStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
+export type LoanRequestStatus = 'draft' | 'submitted' | 'approved' | 'rejected';
 
 export interface LoanRequest {
     id?: string;
     customerUid: string;
-    amount: number; // in cents
-    term: number; // in months
-    purpose: string;
-    collateralId?: string;
+    amountRequested: number;
+    collateralId: string;
+    contractId?: string;
     status: LoanRequestStatus;
-    signature?: string; // Base64 encoded signature image
-    signatureType?: 'typed' | 'drawn';
+
+    // User requested terms
+    term?: number;
+    purpose?: string;
+
+    rejectionReason?: string;
     reviewedBy?: string;
     reviewedAt?: Timestamp;
-    rejectionReason?: string;
     createdAt: Timestamp;
     updatedAt?: Timestamp;
 }
 
 // Loan types
-export type LoanStatus = 'active' | 'paid' | 'defaulted' | 'closed';
+export type LoanStatus = 'active' | 'overdue' | 'default' | 'closed' | 'sold' | 'surrendered';
 
 export interface Loan {
     id?: string;
     customerUid: string;
     requestId: string;
-    amount: number; // in cents
-    interestRate: number; // percentage
-    term: number; // in months
-    monthlyPayment: number; // in cents
-    totalAmount: number; // in cents (principal + interest)
-    remainingBalance: number; // in cents
     status: LoanStatus;
-    disbursedAt: Timestamp;
-    dueDate: Timestamp;
-    createdBy: string;
+
+    // Financials
+    principalCents: number;
+    outstandingCents: number;
+
+    // Terms
+    startDate: Timestamp;
+    cutoffHour: number;
+    businessDaysOnly: boolean;
+    maxDurationMonths: number;
+    post6mMinPrincipalPct: number;
+
+    // References
+    collateralId: string;
+
+    // Default/Sale/Surrender info
+    surrenderRequested?: boolean;
+    surrenderDate?: Timestamp;
+    defaultDate?: Timestamp;
+    soldDate?: Timestamp;
+    salePriceCents?: number;
+    surplusCents?: number;
+    deficitCents?: number;
+
     createdAt: Timestamp;
     updatedAt?: Timestamp;
 }
 
 // Payment types
-export type PaymentStatus = 'submitted' | 'confirmed' | 'rejected';
+export type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
+export type PaymentType = 'interest' | 'principal' | 'mixed';
 
 export interface Payment {
     id?: string;
-    customerUid: string;
     loanId: string;
-    amount: number; // in cents
+    customerUid: string;
+    type: PaymentType;
+    amountCents: number;
     status: PaymentStatus;
-    paymentMethod: 'bank_transfer' | 'cash' | 'card' | 'mobile_money';
-    proofReferenceText?: string; // Reference number when uploads are disabled
-    proofUrl?: string; // Storage URL when uploads are enabled
+    method: 'bank_transfer' | 'cash' | 'other';
+
+    // Proof
+    proofFileRef?: string;
+    proofMimeType?: string;
+
+    // Receipt
+    receiptPdfRef?: string;
+
     confirmedBy?: string;
     confirmedAt?: Timestamp;
     rejectionReason?: string;
+
     createdAt: Timestamp;
     updatedAt?: Timestamp;
 }
 
-// Settings types
+// Settings types (Admin Editable)
 export interface GlobalSettings {
-    maxLoanAmount: number; // in cents
-    minLoanAmount: number; // in cents
-    defaultInterestRate: number; // percentage
-    maxLoanTerm: number; // in months
-    minLoanTerm: number; // in months
-    maintenanceMode: boolean;
+    aprMax: number;
+    licenciaFsmaRequerida: boolean;
+    diasHabiles: string[];
+    horaCorte: number;
+    plazoMaxGarantiaMeses: number;
+
+    // Limits
+    maxLoanAmount: number;
+    minLoanAmount: number;
+    maxLoanTerm: number;
+    minLoanTerm: number;
+    defaultInterestRate: number; // Used for estimator
+
+    defaultInterestMode: 'business_days' | 'calendar_days';
+    loyaltyEnabled: boolean;
+    retentionMonths: number;
     updatedBy?: string;
     updatedAt?: Timestamp;
 }
@@ -130,6 +178,9 @@ export interface GlobalSettings {
 export type AuditAction =
     | 'loan_approved'
     | 'loan_rejected'
+    | 'loan_defaulted'
+    | 'loan_sold'
+    | 'loan_surrendered'
     | 'payment_confirmed'
     | 'payment_rejected'
     | 'settings_updated'
@@ -139,20 +190,21 @@ export type AuditAction =
 export interface AuditLog {
     id?: string;
     action: AuditAction;
-    performedBy: string;
-    targetUid?: string;
-    targetId?: string;
-    details: Record<string, unknown>;
+    actorUid: string;
+    actorRole: UserRole;
+    entityType: 'loan' | 'user' | 'payment' | 'settings';
+    entityId?: string;
+    details?: any;
     timestamp: Timestamp;
 }
 
 // Loyalty types
-export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
-
 export interface LoyaltyStatus {
-    tier: LoyaltyTier;
-    points: number;
-    nextTierPoints: number;
-    benefits: string[];
+    uid: string;
+    completedGoodLoansCount: number;
+    affiliateStatus: boolean;
+    freezeUntil?: Timestamp;
+    tier: 'standard' | 'bronze' | 'silver' | 'gold';
+    createdAt: Timestamp;
     updatedAt: Timestamp;
 }

@@ -19,7 +19,7 @@ const loanSchema = z.object({
 });
 
 export function NewLoanPage() {
-    const { currentUser } = useAuth();
+    const { user } = useAuth(); // Changed currentUser to user
     const { t } = useI18n();
     const queryClient = useQueryClient();
     const [error, setError] = useState('');
@@ -31,25 +31,32 @@ export function NewLoanPage() {
     });
 
     const { data: collaterals } = useQuery({
-        queryKey: ['collaterals', currentUser?.uid],
-        queryFn: () => listCollaterals(currentUser!.uid),
-        enabled: Boolean(currentUser?.uid),
+        queryKey: ['collaterals', user?.uid],
+        queryFn: () => listCollaterals(user!.uid),
+        enabled: Boolean(user?.uid),
     });
 
     const mutation = useMutation({
         mutationFn: async (values: z.infer<typeof loanSchema>) => {
+            if (!user) throw new Error("Not authenticated");
             const amount = parseMoney(values.amountDisplay);
             const term = values.term;
-            return submitLoanRequest(currentUser!.uid, {
-                amount,
-                term,
+            return submitLoanRequest(user.uid, {
+                amountRequested: amount,
+                term: term,
                 purpose: values.purpose,
-                collateralId: values.collateralId || undefined,
+                collateralId: values.collateralId || '',
             });
         },
         onSuccess: () => {
             setSuccess(t('loan.new.success'));
-            queryClient.invalidateQueries({ queryKey: ['loanRequests', currentUser?.uid] });
+            queryClient.invalidateQueries({ queryKey: ['loanRequests', user?.uid] });
+            setFormValues({
+                amountDisplay: '1000',
+                term: settings?.minLoanTerm ?? 6,
+                purpose: '',
+                collateralId: '',
+            });
         },
         onError: (err) => {
             console.error(err);
@@ -176,7 +183,7 @@ export function NewLoanPage() {
                                 <option value="">{t('loan.new.optionalCollateral')}</option>
                                 {(collaterals ?? []).map((c) => (
                                     <option key={c.id} value={c.id}>
-                                        {c.type} - {c.description}
+                                        {c.type} - {c.brandModel}
                                     </option>
                                 ))}
                             </select>

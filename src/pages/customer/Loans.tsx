@@ -1,61 +1,112 @@
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
+import { collection, query, where, getDocs, updateDoc, doc, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
-import { listLoansForUser } from '@/lib/firestoreClient';
-import { formatDate, formatMoney } from '@/lib/converters';
-import { useI18n } from '@/contexts/I18nContext';
+import { Loan } from '@/types';
+import { Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-export function LoansPage() {
-    const { currentUser } = useAuth();
-    const { t } = useI18n();
-    const { data: loans, isLoading } = useQuery({
-        queryKey: ['loans', currentUser?.uid],
-        queryFn: () => listLoansForUser(currentUser!.uid),
-        enabled: Boolean(currentUser?.uid),
-    });
+export default function CustomerLoans() {
+    const { user } = useAuth();
+    const [loans, setLoans] = useState<Loan[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [processing, setProcessing] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function loadLoans() {
+            if (!user) return;
+            try {
+                const q = query(collection(db, 'loans'), where('customerUid', '==', user.uid));
+                const querySnapshot = await getDocs(q);
+                const data: Loan[] = [];
+                querySnapshot.forEach((doc) => {
+                    data.push({ id: doc.id, ...doc.data() } as Loan);
+                });
+                setLoans(data);
+            } catch (error) {
+                console.error('Error loading loans:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadLoans();
+    }, [user]);
+
+    const handleSurrender = async (loanId: string) => {
+        if (!confirm('¿Estás seguro que deseas entregar tu prenda para saldar la deuda? Esta acción notificará al administrador para procesar la venta.')) {
+            return;
+        }
+        setProcessing(loanId);
+        try {
+            const docRef = doc(db, 'loans', loanId);
+            await updateDoc(docRef, {
+                surrenderRequested: true,
+                updatedAt: Timestamp.now()
+            });
+            // Update local state
+            setLoans(prev => prev.map(l => l.id === loanId ? { ...l, surrenderRequested: true } : l));
+        } catch (error) {
+            console.error("Error requesting surrender:", error);
+            alert("Error al procesar la solicitud.");
+        } finally {
+            setProcessing(null);
+        }
+    };
+
+    if (loading) return <div className="p-8"><Loader2 className="animate-spin" /></div>;
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>{t('loans.list.title')}</CardTitle>
-                    <CardDescription>{t('loan.new.subtitle')}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isLoading && <p className="text-muted-foreground">{t('common.loading')}</p>}
-                    {!isLoading && (!loans || loans.length === 0) && (
-                        <p className="text-muted-foreground">{t('loans.list.empty')}</p>
-                    )}
-                    {!isLoading && loans && loans.length > 0 && (
-                        <div className="grid md:grid-cols-2 gap-4">
-                            {loans.map((loan) => (
-                                <Card key={loan.id} className="border">
-                                    <CardHeader className="pb-2">
-                                        <CardTitle className="text-lg">
-                                            {formatMoney(loan.amount)} • {loan.status}
-                                        </CardTitle>
-                                        <CardDescription>
-                                            {t('loans.details.balance')}: {formatMoney(loan.remainingBalance)}
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="flex items-center justify-between">
-                                        <div className="text-sm text-muted-foreground space-y-1">
-                                            <p>{t('field.term')}: {loan.term}m</p>
-                                            <p>{t('field.interestRate')}: {loan.interestRate}%</p>
-                                            <p>{t('common.status.approved')}: {formatDate(loan.disbursedAt)}</p>
-                                        </div>
-                                        <Link to={`/app/loans/${loan.id}`}>
-                                            <Button variant="outline" size="sm">{t('common.view')}</Button>
-                                        </Link>
-                                    </CardContent>
-                                </Card>
-                            ))}
+            <h1 className="text-3xl font-bold text-gray-900">Mis Préstamos</h1>
+
+            {loans.length === 0 ? (
+                <div className="bg-white p-6 rounded-lg shadow text-center text-gray-500">
+                    No tienes préstamos activos.
+                </div>
+            ) : (
+                <div className="grid gap-6">
+                    {loans.map(loan => (
+                        <div key={loan.id} className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-600">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-bold text-lg">Préstamo #{loan.id?.slice(-4)}</h3>
+                                        <span className={`text-xs px-2 py-1 rounded bg-gray-100 uppercase`}>
+                                            {loan.status}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-600 mt-1">Saldo pendiente: <span className="font-bold text-red-600">{(loan.outstandingCents / 100).toFixed(2)} €</span></p>
+                                </div>
+
+                                {loan.status === 'active' && !loan.surrenderRequested && (
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => loan.id && handleSurrender(loan.id)}
+                                        disabled={!!processing}
+                                    >
+                                        {processing === loan.id ? <Loader2 className="animate-spin h-3 w-3" /> : 'Entregar Prenda (No Pagar Más)'}
+                                    </Button>
+                                )}
+
+                                {loan.surrenderRequested && (
+                                    <div className="flex items-center text-orange-600 text-sm font-medium">
+                                        <AlertTriangle className="h-4 w-4 mr-1" />
+                                        Solicitud de entrega enviada
+                                    </div>
+                                )}
+
+                                {loan.status === 'sold' && (
+                                    <div className="flex items-center text-gray-500 text-sm font-medium">
+                                        <CheckCircle className="h-4 w-4 mr-1" />
+                                        Prenda vendida / Deuda saldada
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

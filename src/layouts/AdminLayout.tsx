@@ -5,13 +5,13 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { useI18n } from '@/contexts/I18nContext';
 
 export function AdminLayout() {
-    const { logout, userData } = useAuth();
+    const { signOut, userData } = useAuth();
     const { t } = useI18n();
     const navigate = useNavigate();
 
     async function handleLogout() {
         try {
-            await logout();
+            await signOut();
             navigate('/');
         } catch (error) {
             console.error('Failed to logout:', error);
@@ -36,11 +36,17 @@ export function AdminLayout() {
                                 <Link to="/admin" className="text-sm hover:text-primary transition-colors">
                                     {t('nav.dashboard')}
                                 </Link>
+                                <Link to="/admin/clients" className="text-sm hover:text-primary transition-colors">
+                                    Clients
+                                </Link>
                                 <Link to="/admin/requests" className="text-sm hover:text-primary transition-colors">
                                     {t('nav.requests')}
                                 </Link>
                                 <Link to="/admin/loans" className="text-sm hover:text-primary transition-colors">
                                     {t('nav.loans')}
+                                </Link>
+                                <Link to="/admin/payments" className="text-sm hover:text-primary transition-colors">
+                                    Payments
                                 </Link>
                                 <Link to="/admin/settings" className="text-sm hover:text-primary transition-colors">
                                     {t('nav.settings')}

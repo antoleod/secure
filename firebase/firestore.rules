@@ -18,62 +18,66 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && getUserRole() == 'admin';
     }
-    
-    function isCustomer() {
-      return isAuthenticated() && getUserRole() == 'customer';
+
+    function isSuperAdminEmail() {
+       return request.auth.token.email == 'jdioses@outlook.be' || request.auth.token.email == 'antoleod@gmail.com';
     }
     
     // Users collection
     match /users/{uid} {
-      allow read: if isOwner(uid);
-      allow create: if isAuthenticated() && request.auth.uid == uid 
-                    && request.resource.data.role == 'customer'
-                    && request.resource.data.status == 'active';
-      allow update: if isOwner(uid) || isAdmin();
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isAuthenticated() && request.auth.uid == uid;
+      allow update: if isAdmin() 
+                    || (isOwner(uid) && !('role' in request.resource.data))
+                    || (isOwner(uid) && isSuperAdminEmail() && request.resource.data.role == 'admin');
       allow list: if isAdmin();
     }
     
     // KYC collection
     match /kyc/{uid} {
-      allow read, write: if isOwner(uid);
-      allow list: if isAdmin();
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid) || isAdmin(); 
     }
     
     // Collaterals collection
     match /collaterals/{docId} {
       allow create: if isAuthenticated() && request.resource.data.ownerUid == request.auth.uid;
-      allow read, update: if isAuthenticated() && resource.data.ownerUid == request.auth.uid;
-      allow list: if isAdmin() || (isAuthenticated() && resource.data.ownerUid == request.auth.uid);
+      // Allow reading if Admin OR Owner OR (item is for sale)
+      allow read: if isAdmin() 
+                  || (isAuthenticated() && resource.data.ownerUid == request.auth.uid)
+                  || resource.data.isForSale == true;
+      allow update: if isAdmin(); 
+      allow list: if isAdmin() 
+                  || (isAuthenticated() && resource.data.ownerUid == request.auth.uid)
+                  || (isAuthenticated() && resource.data.isForSale == true); // Allow listing for sale items
     }
     
     // Loan Requests collection
-    match /loanRequests/{docId} {
-      allow create: if isAuthenticated() 
-                    && request.resource.data.customerUid == request.auth.uid
-                    && request.resource.data.status == 'submitted';
-      allow read: if isAuthenticated() 
-                  && (resource.data.customerUid == request.auth.uid || isAdmin());
-      allow update: if isAdmin();
+    match /loan_requests/{docId} {
+      allow create: if isAuthenticated() && request.resource.data.customerUid == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.customerUid == request.auth.uid || isAdmin());
+      allow update: if isAdmin(); 
       allow list: if isAdmin();
     }
     
     // Loans collection
     match /loans/{docId} {
       allow create: if isAdmin();
-      allow read: if isAuthenticated() 
-                  && (resource.data.customerUid == request.auth.uid || isAdmin());
-      allow update: if isAdmin();
+      allow read: if isAuthenticated() && (resource.data.customerUid == request.auth.uid || isAdmin());
+      // Allow Admin to update anything
+      // Allow User to only update 'surrenderRequested' field if they own the loan
+      allow update: if isAdmin() 
+                    || (isAuthenticated() 
+                        && resource.data.customerUid == request.auth.uid 
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['surrenderRequested', 'updatedAt']));
       allow list: if isAdmin() || (isAuthenticated() && resource.data.customerUid == request.auth.uid);
     }
     
     // Payments collection
     match /payments/{docId} {
-      allow create: if isAuthenticated() 
-                    && request.resource.data.customerUid == request.auth.uid
-                    && request.resource.data.status == 'submitted';
-      allow read: if isAuthenticated() 
-                  && (resource.data.customerUid == request.auth.uid || isAdmin());
-      allow update: if isAdmin() && request.resource.data.keys().hasAll(['status', 'confirmedAt', 'confirmedBy']);
+      allow create: if isAuthenticated() && request.resource.data.customerUid == request.auth.uid;
+      allow read: if isAuthenticated() && (resource.data.customerUid == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
       allow list: if isAdmin() || (isAuthenticated() && resource.data.customerUid == request.auth.uid);
     }
     
@@ -84,13 +88,13 @@ service cloud.firestore {
     }
     
     // Audit Logs collection
-    match /auditLogs/{docId} {
-      allow create: if isAdmin();
-      allow read, list: if isAdmin();
-      allow update, delete: if false; // Audit logs are immutable
+    match /audit_logs/{docId} {
+      allow create: if isAdmin() || isAuthenticated(); 
+      allow read: if isAdmin();
+      allow write: if false; 
     }
     
-    // Loyalty subcollection (under users)
+    // Loyalty subcollection
     match /users/{uid}/loyalty/status {
       allow read: if isOwner(uid);
       allow write: if isAdmin();

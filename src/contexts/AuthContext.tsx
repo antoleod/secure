@@ -10,23 +10,17 @@ import {
   sendPasswordResetEmail,
   AuthError,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-
-export interface UserData {
-  uid: string;
-  email: string;
-  role: 'admin' | 'customer';
-  [key: string]: any;
-}
+import { User as UserType, UserRole } from '../types';
 
 export interface AuthContextType {
   user: User | null;
-  userData: UserData | null;
+  userData: UserType | null;
   loading: boolean;
   error: string | null;
   signInEmail: (email: string, pass: string) => Promise<void>;
-  signUpEmail: (email: string, pass: string) => Promise<void>;
+  signUpEmail: (email: string, pass: string, fullName: string, phone: string) => Promise<void>;
   signInGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,6 +28,8 @@ export interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const SUPER_ADMINS = ['jdioses@outlook.be', 'antoleod@gmail.com'];
 
 export function useAuth() {
   const context = useContext(AuthContext);
@@ -45,7 +41,7 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [userData, setUserData] = useState<UserData | null>(null);
+  const [userData, setUserData] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,9 +59,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const docRef = doc(db, 'users', user.uid);
           const docSnap = await getDoc(docRef);
+
           if (docSnap.exists()) {
-            setUserData(docSnap.data() as UserData);
+            const data = docSnap.data() as UserType;
+            // Force Admin Check
+            if (user.email && SUPER_ADMINS.includes(user.email) && data.role !== 'admin') {
+              // Do not attempt to update Firestore to avoid permission issues; trust the email for elevated UI.
+              setUserData({ ...data, role: 'admin' });
+            } else {
+              setUserData(data);
+            }
           } else {
+            // Document doesn't exist? Should catch this or handle it. 
+            // Possibly create it if creating from strict Auth providers but absent in DB?
+            // For now just null.
             setUserData(null);
           }
         } catch (error) {
@@ -121,10 +128,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signUpEmail = async (email: string, pass: string) => {
+  const signUpEmail = async (email: string, pass: string, fullName: string, phone: string) => {
     setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, email, pass);
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const isSuperAdmin = SUPER_ADMINS.includes(email);
+
+      const newUser: UserType = {
+        uid: cred.user.uid,
+        email: email,
+        role: isSuperAdmin ? 'admin' : 'customer',
+        status: 'active',
+        fullName: fullName || '',
+        phone: phone || '',
+        dob: '',
+        addressCityPostal: '',
+        createdAt: Timestamp.now(),
+      };
+
+      await setDoc(doc(db, 'users', cred.user.uid), newUser);
+      setUserData(newUser);
     } catch (err) {
       handleError(err);
       throw err;
@@ -135,7 +158,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const cred = await signInWithPopup(auth, provider);
+      const userEmail = cred.user.email || '';
+      const docRef = doc(db, 'users', cred.user.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (!docSnap.exists()) {
+        const isSuperAdmin = SUPER_ADMINS.includes(userEmail);
+        const newUser: UserType = {
+          uid: cred.user.uid,
+          email: userEmail,
+          role: isSuperAdmin ? 'admin' : 'customer',
+          status: 'active',
+          fullName: cred.user.displayName || '',
+          phone: '',
+          dob: '',
+          addressCityPostal: '',
+          createdAt: Timestamp.now(),
+        };
+        await setDoc(docRef, newUser);
+        setUserData(newUser);
+      } else {
+        // Check for super admin promotion
+        const data = docSnap.data() as UserType;
+        if (SUPER_ADMINS.includes(userEmail) && data.role !== 'admin') {
+          setUserData({ ...data, role: 'admin' });
+        } else {
+          setUserData(data);
+        }
+      }
     } catch (err) {
       handleError(err);
       throw err;

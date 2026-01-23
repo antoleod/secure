@@ -5,13 +5,13 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { useI18n } from '@/contexts/I18nContext';
 
 export function CustomerLayout() {
-    const { logout, userData } = useAuth();
+    const { signOut, userData } = useAuth();
     const { t } = useI18n();
     const navigate = useNavigate();
 
     async function handleLogout() {
         try {
-            await logout();
+            await signOut();
             navigate('/');
         } catch (error) {
             console.error('Failed to logout:', error);
@@ -47,6 +47,9 @@ export function CustomerLayout() {
                                 </Link>
                                 <Link to="/app/payments" className="text-sm hover:text-primary transition-colors">
                                     {t('nav.payments')}
+                                </Link>
+                                <Link to="/app/store" className="text-sm hover:text-primary transition-colors font-semibold text-green-600">
+                                    Tienda
                                 </Link>
                                 <Link to="/app/help" className="text-sm hover:text-primary transition-colors">
                                     {t('nav.help')}
