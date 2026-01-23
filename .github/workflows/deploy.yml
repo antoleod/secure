@@ -37,7 +37,7 @@ jobs:
           VITE_FIREBASE_MEASUREMENT_ID=${{ secrets.VITE_FIREBASE_MEASUREMENT_ID || 'G-XXXXXXX' }}
           VITE_ENABLE_UPLOADS=${{ vars.VITE_ENABLE_UPLOADS || 'false' }}
           VITE_USE_EMULATORS=${{ vars.VITE_USE_EMULATORS || 'false' }}
-          VITE_BASE_PATH=${{ vars.VITE_BASE_PATH || '/' }}
+          VITE_BASE_PATH=${{ vars.VITE_BASE_PATH || format('/{0}/', github.event.repository.name) }}
           EOF
 
       - name: Setup Node
@@ -61,7 +61,7 @@ jobs:
       - name: Build
         env:
           # GitHub Pages (project pages) are served from /<repo>/
-          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
+          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || format('/{0}/', github.event.repository.name) }}
         run: npm run build
 
       - name: Setup Pages
