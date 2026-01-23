@@ -147,6 +147,7 @@ export async function decideLoanRequest(options: {
             throw new Error('Request not found');
         }
         const request = requestSnap.data();
+        const requestId = request.id ?? options.requestId;
         if (request.status !== 'submitted' && request.status !== 'under_review') {
             throw new Error('Request already decided');
         }
@@ -166,7 +167,7 @@ export async function decideLoanRequest(options: {
                 action: 'loan_rejected' as AuditAction,
                 performedBy: options.adminUid,
                 targetUid: request.customerUid,
-                targetId: request.id,
+                targetId: requestId,
                 details: { reason: options.rejectionReason },
                 timestamp: now,
             });
@@ -184,7 +185,7 @@ export async function decideLoanRequest(options: {
         const loanRef = doc(collection(db, 'loans')).withConverter(loanConverter);
         tx.set(loanRef, {
             customerUid: request.customerUid,
-            requestId: request.id,
+            requestId,
             amount: request.amount,
             interestRate: options.interestRate,
             term: options.term,
@@ -211,7 +212,7 @@ export async function decideLoanRequest(options: {
             performedBy: options.adminUid,
             targetUid: request.customerUid,
             targetId: loanRef.id,
-            details: { requestId: request.id, interestRate: options.interestRate, term: options.term },
+            details: { requestId, interestRate: options.interestRate, term: options.term },
             timestamp: now,
         });
 

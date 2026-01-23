@@ -92,7 +92,9 @@ export function AdminLoanDetailsPage() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => paymentMutation.mutate({ paymentId: payment.id, status: 'confirmed' })}
+                                            onClick={() =>
+                                                paymentMutation.mutate({ paymentId: payment.id ?? '', status: 'confirmed' })
+                                            }
                                             disabled={paymentMutation.isPending}
                                         >
                                             {t('admin.loanDetails.confirmPayment')}
@@ -100,7 +102,9 @@ export function AdminLoanDetailsPage() {
                                         <Button
                                             variant="destructive"
                                             size="sm"
-                                            onClick={() => paymentMutation.mutate({ paymentId: payment.id, status: 'rejected' })}
+                                            onClick={() =>
+                                                paymentMutation.mutate({ paymentId: payment.id ?? '', status: 'rejected' })
+                                            }
                                             disabled={paymentMutation.isPending}
                                         >
                                             {t('admin.loanDetails.rejectPayment')}

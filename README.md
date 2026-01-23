@@ -1,60 +1,72 @@
 # OryxenTech Collateral Loans
 
-Aplicación web (React + Firebase) para gestión de préstamos con control de roles y trazabilidad. Todas las cantidades monetarias se guardan en centavos enteros.
+Aplicacion web (React + Firebase) para prestamos con garantia, control de roles y trazabilidad completa. Montada en GitHub Pages usando HashRouter.
 
-## Resumen rápido
-- Portal de clientes: KYC, registro de garantía, solicitudes, pagos, estado de lealtad.
-- Portal de administración: aprobación de solicitudes, creación de préstamos, confirmación de pagos, parámetros de negocio y bitácora.
-- Hosting en GitHub Pages con `HashRouter` para rutas seguras ante refresh.
-- Storage **deshabilitado por defecto** (reglas deny-all); habilitar solo tras publicar reglas seguras.
+## Que incluye
+- Portales separados: cliente (KYC, solicitudes, pagos, lealtad) y admin (aprobaciones, bitacora, settings).
+- Seguridad base: Storage bloqueado por defecto, reglas de Firestore listas, rutas protegidas por rol, bandera `VITE_ENABLE_UPLOADS`.
+- CI/CD en GitHub Actions con lint, typecheck, tests (Vitest) y build antes de publicar en Pages.
+- Plantilla de secretos (`.env.example`) y reglas para no exponer credenciales.
 
 ## Requisitos
-- Node.js 20+, npm
-- Proyecto de Firebase propio (Firestore, Auth y Storage)
-- Firebase CLI (`npm i -g firebase-tools`)
-- Cuenta de GitHub para Pages (deploy vía Actions)
+- Node.js 20+
+- npm
+- Proyecto de Firebase (Auth, Firestore, Storage) y Firebase CLI (`npm i -g firebase-tools`).
 
-## Configuración local (sin exponer secretos)
-1) Instala dependencias: `npm install`
-2) Copia `.env.example` a `.env` y rellena los placeholders con las credenciales **fuera del control de Git**.
-   - `VITE_ENABLE_UPLOADS=false` hasta tener reglas de Storage aprobadas.
-   - Opcional para emuladores: `VITE_USE_EMULATORS=true` y ejecuta `npm run emulators` antes de `npm run dev`.
-3) Ejecuta el dev server: `npm run dev`
-4) Calidad: `npm run lint` y `npm run test`
-5) Pruebas de reglas de Firestore: `npm run emulators` luego `npm run test:rules`
+## Configuracion local (sin exponer secretos)
+1. `cp .env.example .env` y completa los valores reales (no los subas a git).
+   - Mantener `VITE_ENABLE_UPLOADS=false` hasta tener reglas de Storage aprobadas.
+   - Opcional: `VITE_USE_EMULATORS=true` y corre `npm run emulators` antes de `npm run dev`.
+2. `npm install`
+3. `npm run dev`
+4. Calidad: `npm run lint`, `npm run typecheck`, `npm run test` (o `npm run test:ci` para modo no interactivo).
+5. Reglas Firestore: `npm run emulators` y luego `npm run test:rules` (requiere FIRESTORE_EMULATOR_HOST).
 
 ## Despliegue a GitHub Pages
-0) Configura los secretos del repo (GitHub → Settings → Secrets/Variables):
-   - Secretos: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_MEASUREMENT_ID`
-   - Variables (no sensibles): `VITE_ENABLE_UPLOADS` (default `false`), `VITE_USE_EMULATORS` (default `false`)
-1) Push a `main`; `.github/workflows/deploy.yml` construye y publica.
-2) El build usa `VITE_BASE_PATH=/<repo>/` automáticamente; ajústalo si cambias el nombre del repositorio.
-3) Añade `YOUR_USERNAME.github.io` (o dominio propio) en Firebase Auth → Authorized domains.
+Configura el repo en GitHub -> Settings -> Secrets and variables:
+- Secrets: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, `VITE_FIREBASE_MEASUREMENT_ID`.
+- Variables: `VITE_ENABLE_UPLOADS` (default `false`), `VITE_USE_EMULATORS` (default `false`).
 
-## Seguridad y secretos
-- **Nunca** commitees `.env` ni credenciales reales. Usa `.env.example` como plantilla.
-- Elimina y regenera cualquier clave que haya sido expuesta previamente.
-- Restringe la Firebase API key por origen HTTP (referers) y habilita reglas estrictas en Firestore/Storage; la “API key pública” no debe dar acceso por sí sola.
-- Habilita App Check y reglas de seguridad antes de activar cargas (`VITE_ENABLE_UPLOADS=true`).
-- Herramientas preventivas:
-  - Pre-commit con `gitleaks` (ver `.pre-commit-config.yaml`).
-  - Secret scanning en GitHub Security (o gitleaks en CI si Advanced Security no está disponible).
-- Reporte de vulnerabilidades: sigue `SECURITY.md`.
+Workflows:
+- `.github/workflows/ci.yml`: checkout -> .env desde secretos -> install -> typecheck -> lint -> test -> build.
+- `.github/workflows/deploy.yml`: igual que CI y luego publica a GitHub Pages (`actions/deploy-pages`), usando `VITE_BASE_PATH=/<repo>/`.
+
+Dominios: añade `YOUR_USERNAME.github.io` (o tu custom domain) en Firebase Auth -> Authorized domains.
 
 ## Scripts clave
-- `npm run dev` — desarrollo
-- `npm run build` — build de producción
-- `npm run lint` — ESLint
-- `npm run test` — Vitest (jsdom)
-- `npm run emulators` — arranca emuladores de Firebase
-- `npm run test:rules` — pruebas de reglas (requiere emuladores corriendo)
+- `npm run dev` – desarrollo
+- `npm run build` – build de produccion (tsc + vite)
+- `npm run typecheck` – TypeScript build mode
+- `npm run lint` – ESLint
+- `npm run test` – Vitest interactivo (jsdom)
+- `npm run test:ci` – Vitest en modo run
+- `npm run test:rules` – pruebas de reglas (requiere emuladores)
+- `npm run emulators` – emuladores Firebase
 
-## Estructura relevante
-- `src/lib/firebase.ts` — inicialización de Firebase (solo lee `import.meta.env.*`).
-- `firebase/firestore.rules` y `firebase/storage.rules` — reglas vigentes (storage deniega todo).
-- `firebase/storage.rules.recommended` — reglas listas para habilitar cargas seguras.
-- `.github/workflows/ci.yml` y `deploy.yml` — validación y despliegue a Pages.
+## Seguridad y secretos
+- No commitear `.env` ni credenciales reales; usa `.env.example`.
+- Restringe la API key por referer y habilita App Check antes de activar cargas (`VITE_ENABLE_UPLOADS=true`).
+- Revisa y despliega reglas en `firebase/firestore.rules` y `firebase/storage.rules`. Storage queda deny-all por defecto.
+- Pre-commit: instala `pre-commit` y corre `pre-commit install` para habilitar el hook de `gitleaks`.
+- Reporte de vulnerabilidades: ver `SECURITY.md`.
 
-## Flags y UX
-- `VITE_ENABLE_UPLOADS=false`: UI pide referencia textual en vez de archivos y muestra aviso.
-- i18n listo (EN/ES/FR) con selector en encabezados.
+## Arquitectura breve
+- `src/App.tsx`: routing con HashRouter, rutas protegidas por rol.
+- `src/contexts/AuthContext.tsx`, `src/contexts/I18nContext.tsx`: auth + i18n.
+- `src/lib/firebase.ts`: inicializacion de Firebase via `import.meta.env`.
+- `src/pages/*`: pantallas publicas, cliente y admin.
+- `firebase/*.rules`: reglas de seguridad (storage deny-all por defecto, recomendadas en `storage.rules.recommended`).
+- `tests/ui/landing.spec.tsx`: smoke test de UI; `tests/rules/firestore.test.ts`: pruebas de reglas (skip si no hay emulador).
+
+## Notas de UX/UI
+- Landing redisenada con fondo gradiente, cards de valor, checklist de seguridad y CTAs claros.
+- ErrorBoundary global (`src/components/ErrorBoundary.tsx`) con fallback y reload.
+- Tipografia Space Grotesk, sombras suaves y helpers de decoracion (`pattern-grid`, `soft-shadow`).
+
+## Flujo recomendado antes de PR
+```bash
+npm run lint
+npm run typecheck
+npm run test:ci
+npm run build
+```

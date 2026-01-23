@@ -654,17 +654,25 @@ function interpolate(template: string, params?: Record<string, string | number>)
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
+    const storage =
+        typeof window !== 'undefined' &&
+        typeof window.localStorage !== 'undefined' &&
+        typeof window.localStorage.getItem === 'function' &&
+        typeof window.localStorage.setItem === 'function'
+            ? window.localStorage
+            : null;
+
     const [locale, setLocaleState] = useState<Locale>(() => {
-        const stored = typeof window !== 'undefined' ? window.localStorage.getItem('locale') : null;
+        const stored = storage ? storage.getItem('locale') : null;
         if (stored === 'es' || stored === 'fr' || stored === 'en') return stored;
         return 'en';
     });
 
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            window.localStorage.setItem('locale', locale);
+        if (storage) {
+            storage.setItem('locale', locale);
         }
-    }, [locale]);
+    }, [locale, storage]);
 
     const value = useMemo<I18nContextValue>(() => {
         const translate = (key: string, params?: Record<string, string | number>) => {

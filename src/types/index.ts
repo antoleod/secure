@@ -40,7 +40,7 @@ export type CollateralType = 'vehicle' | 'property' | 'jewelry' | 'electronics' 
 export type CollateralStatus = 'pending' | 'approved' | 'rejected';
 
 export interface Collateral {
-    id: string;
+    id?: string;
     ownerUid: string;
     type: CollateralType;
     description: string;
@@ -58,7 +58,7 @@ export interface Collateral {
 export type LoanRequestStatus = 'submitted' | 'under_review' | 'approved' | 'rejected';
 
 export interface LoanRequest {
-    id: string;
+    id?: string;
     customerUid: string;
     amount: number; // in cents
     term: number; // in months
@@ -78,7 +78,7 @@ export interface LoanRequest {
 export type LoanStatus = 'active' | 'paid' | 'defaulted' | 'closed';
 
 export interface Loan {
-    id: string;
+    id?: string;
     customerUid: string;
     requestId: string;
     amount: number; // in cents
@@ -99,7 +99,7 @@ export interface Loan {
 export type PaymentStatus = 'submitted' | 'confirmed' | 'rejected';
 
 export interface Payment {
-    id: string;
+    id?: string;
     customerUid: string;
     loanId: string;
     amount: number; // in cents
@@ -137,7 +137,7 @@ export type AuditAction =
     | 'user_status_changed';
 
 export interface AuditLog {
-    id: string;
+    id?: string;
     action: AuditAction;
     performedBy: string;
     targetUid?: string;
