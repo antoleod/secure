@@ -77,8 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const newUser = buildUserProfile(credUser, userEmail);
-    await setDoc(docRef, newUser);
-    return newUser;
+    try {
+      await setDoc(docRef, newUser);
+      return newUser;
+    } catch (err) {
+      console.error('setDoc failed, using fallback profile', err);
+      return newUser;
+    }
   };
 
   useEffect(() => {
@@ -173,16 +178,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } catch (err) {
             console.error('Error ensuring user profile:', err);
-            setError('No pudimos cargar tu perfil. Intenta nuevamente.');
-            setUserData(null);
+            const email = nextUser.email || '';
+            const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email);
+            setUserData(buildUserProfile(nextUser, email));
+            setError('No pudimos cargar tu perfil. Continuamos con datos locales.');
           } finally {
             setLoading(false);
           }
         },
         (err) => {
           console.error('Error listening to user data:', err);
-          setError('No pudimos cargar tu perfil. Intenta nuevamente.');
-          setUserData(null);
+          const email = nextUser.email || '';
+          setUserData(buildUserProfile(nextUser, email));
+          setError('No pudimos cargar tu perfil. Continuamos con datos locales.');
           setLoading(false);
         }
       );
