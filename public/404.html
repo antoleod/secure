@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting…</title>
+  <link rel="icon" href="/secure-icon.svg">
+  <style>
+    body{margin:0;font-family:"Inter",system-ui,sans-serif;background:#0b1c2a;color:#e8edf2;display:flex;align-items:center;justify-content:center;min-height:100vh;}
+    .box{padding:24px;border:1px solid #123049;border-radius:16px;background:#0f2536;text-align:center;}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <p>We could not find this path. Taking you back to home…</p>
+    <p><a href="/">Go now</a></p>
+  </div>
+  <script>
+    (function() {
+      var redirect = '/' + (window.location.hash || '');
+      window.location.replace(redirect);
+    })();
+  </script>
+</body>
+</html>

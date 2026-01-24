@@ -11,6 +11,7 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (error) clearError();
     setIsSubmitting(true);
     try {
       await resetPassword(email);
@@ -51,7 +52,10 @@ export default function ResetPassword() {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Email address"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (error) clearError();
+              }}
             />
             <button
               type="submit"

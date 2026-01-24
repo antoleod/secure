@@ -19,13 +19,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { signInEmail, signInGoogle, error, clearError } = useAuth();
+  const { signInEmail, signInGoogle, error, clearError, loading } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (error) clearError();
     setIsSubmitting(true);
     try {
       await signInEmail(email, password);
@@ -38,11 +39,15 @@ export default function Login() {
   };
 
   const handleGoogle = async () => {
+    if (error) clearError();
+    setIsSubmitting(true);
     try {
       await signInGoogle();
       navigate('/dashboard');
     } catch {
       // Error handled in context
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -155,7 +160,10 @@ export default function Login() {
                     className="h-16 pl-14 bg-white border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-emerald-400 font-bold text-slate-900 transition-all"
                     placeholder="email@secure.tech"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) clearError();
+                    }}
                   />
                 </div>
               </div>
@@ -173,7 +181,10 @@ export default function Login() {
                     className="h-16 pl-14 bg-white border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-emerald-400 font-bold text-slate-900 transition-all"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) clearError();
+                    }}
                   />
                 </div>
               </div>
@@ -181,7 +192,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
               className="w-full h-16 bg-[#0f3d5c] hover:bg-[#0d3049] text-white rounded-[1.5rem] shadow-2xl shadow-emerald-200/30 text-sm font-black uppercase tracking-[0.2em] transition-all group active:scale-[0.98]"
             >
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : (
@@ -202,6 +213,7 @@ export default function Login() {
             onClick={handleGoogle}
             type="button"
             variant="outline"
+            disabled={isSubmitting || loading}
             className="w-full h-16 border-emerald-100 hover:bg-emerald-50 rounded-[1.5rem] text-sm font-black uppercase tracking-widest gap-3 transition-all hover:border-emerald-200 text-emerald-700"
           >
             <Chrome className="h-5 w-5 text-emerald-600" />

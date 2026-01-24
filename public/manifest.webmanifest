@@ -1,0 +1,15 @@
+{
+  "name": "Secure | Préstamos con garantía",
+  "short_name": "Secure",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f3d5c",
+  "theme_color": "#0f3d5c",
+  "icons": [
+    {
+      "src": "/secure-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

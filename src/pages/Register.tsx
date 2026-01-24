@@ -22,13 +22,14 @@ export default function Register() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
 
-  const { signUpEmail, error, clearError } = useAuth();
+  const { signUpEmail, error, clearError, loading } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (error) clearError();
     setIsSubmitting(true);
     try {
       await signUpEmail(email, password, fullName, phone);
@@ -90,7 +91,10 @@ export default function Register() {
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
                   placeholder="John Doe"
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => {
+                    setFullName(e.target.value);
+                    if (error) clearError();
+                  }}
                 />
               </div>
             </div>
@@ -105,7 +109,10 @@ export default function Register() {
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
                   placeholder="+32 ..."
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    if (error) clearError();
+                  }}
                 />
               </div>
             </div>
@@ -120,7 +127,10 @@ export default function Register() {
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
                   placeholder="email@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) clearError();
+                  }}
                 />
               </div>
             </div>
@@ -135,7 +145,10 @@ export default function Register() {
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) clearError();
+                  }}
                 />
               </div>
             </div>
@@ -143,7 +156,7 @@ export default function Register() {
             <div className="md:col-span-2 pt-6">
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || loading}
                 className="w-full h-16 bg-slate-900 hover:bg-black text-white rounded-2xl shadow-2xl shadow-slate-200 text-sm font-black uppercase tracking-[0.2em] transition-all group active:scale-[0.98]"
               >
                 {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : (

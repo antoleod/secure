@@ -30,6 +30,7 @@ export interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const SUPER_ADMINS = ['jdioses@outlook.be', 'antoleod@gmail.com'];
+const DEFAULT_ROLE: UserType['role'] = 'customer';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
@@ -49,6 +50,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     hasInvalidConfig ? 'La configuracion de Firebase es invalida. Revisa las variables de entorno.' : null
   );
 
+  const buildUserProfile = (credUser: User, email: string): UserType => {
+    const isSuperAdmin = SUPER_ADMINS.includes(email);
+
+    return {
+      uid: credUser.uid,
+      email,
+      role: isSuperAdmin ? 'admin' : DEFAULT_ROLE,
+      status: 'active',
+      fullName: credUser.displayName || '',
+      phone: '',
+      dob: '',
+      addressCityPostal: '',
+      createdAt: Timestamp.now(),
+    };
+  };
+
+  const ensureUserProfile = async (credUser: User): Promise<UserType | null> => {
+    const userEmail = credUser.email || '';
+    const docRef = doc(db, 'users', credUser.uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data() as UserType;
+    }
+
+    const newUser = buildUserProfile(credUser, userEmail);
+    await setDoc(docRef, newUser);
+    return newUser;
+  };
+
   useEffect(() => {
     if (hasInvalidConfig) return;
 
@@ -62,11 +93,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         unsubscribeUserData = null;
       }
 
-      if (nextUser) {
-        const docRef = doc(db, 'users', nextUser.uid);
-        unsubscribeUserData = onSnapshot(
-          docRef,
-          (docSnap) => {
+      if (!nextUser) {
+        setUserData(null);
+        setLoading(false);
+        return;
+      }
+
+      const docRef = doc(db, 'users', nextUser.uid);
+      unsubscribeUserData = onSnapshot(
+        docRef,
+        async (docSnap) => {
+          try {
             if (docSnap.exists()) {
               const data = docSnap.data() as UserType;
               if (nextUser.email && SUPER_ADMINS.includes(nextUser.email) && data.role !== 'admin') {
@@ -75,20 +112,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUserData(data);
               }
             } else {
-              setUserData(null);
+              const createdProfile = await ensureUserProfile(nextUser);
+              setUserData(createdProfile);
             }
-            setLoading(false);
-          },
-          (err) => {
-            console.error('Error listening to user data:', err);
+          } catch (err) {
+            console.error('Error ensuring user profile:', err);
+            setError('No pudimos cargar tu perfil. Intenta nuevamente.');
             setUserData(null);
+          } finally {
             setLoading(false);
           }
-        );
-      } else {
-        setUserData(null);
-        setLoading(false);
-      }
+        },
+        (err) => {
+          console.error('Error listening to user data:', err);
+          setError('No pudimos cargar tu perfil. Intenta nuevamente.');
+          setUserData(null);
+          setLoading(false);
+        }
+      );
     });
 
     return () => {
@@ -129,23 +170,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInEmail = async (email: string, pass: string) => {
     setError(null);
+    setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, pass);
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), pass);
+      await ensureUserProfile(cred.user);
     } catch (err) {
       handleError(err);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUpEmail = async (email: string, pass: string, fullName: string, phone: string) => {
     setError(null);
+    setLoading(true);
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      const isSuperAdmin = SUPER_ADMINS.includes(email);
+      const normalizedEmail = email.trim();
+      const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, pass);
+      const isSuperAdmin = SUPER_ADMINS.includes(normalizedEmail);
 
       const newUser: UserType = {
         uid: cred.user.uid,
-        email: email,
+        email: normalizedEmail,
         role: isSuperAdmin ? 'admin' : 'customer',
         status: 'active',
         fullName: fullName || '',
@@ -159,43 +206,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       handleError(err);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const signInGoogle = async () => {
     setError(null);
+    setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
-      const userEmail = cred.user.email || '';
-      const docRef = doc(db, 'users', cred.user.uid);
-      const docSnap = await getDoc(docRef);
-
-      if (!docSnap.exists()) {
-        const isSuperAdmin = SUPER_ADMINS.includes(userEmail);
-        const newUser: UserType = {
-          uid: cred.user.uid,
-          email: userEmail,
-          role: isSuperAdmin ? 'admin' : 'customer',
-          status: 'active',
-          fullName: cred.user.displayName || '',
-          phone: '',
-          dob: '',
-          addressCityPostal: '',
-          createdAt: Timestamp.now(),
-        };
-        await setDoc(docRef, newUser);
-      }
+      await ensureUserProfile(cred.user);
     } catch (err) {
       handleError(err);
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const resetPassword = async (email: string) => {
     setError(null);
     try {
-      await sendPasswordResetEmail(auth, email);
+      const trimmed = email.trim();
+      await sendPasswordResetEmail(auth, trimmed, {
+        url: `${window.location.origin}/#/login`,
+      });
     } catch (err) {
       handleError(err);
       throw err;
