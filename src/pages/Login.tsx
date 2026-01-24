@@ -23,10 +23,21 @@ export default function Login() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (error) clearError();
+    if (!email.includes('@')) {
+      setLocalError('Usa un correo válido, ej. persona@correo.com');
+      return;
+    }
+    if (password.length < 6) {
+      setLocalError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    setLocalError(null);
     setIsSubmitting(true);
     try {
       await signInEmail(email, password);
@@ -40,14 +51,14 @@ export default function Login() {
 
   const handleGoogle = async () => {
     if (error) clearError();
-    setIsSubmitting(true);
+    setIsGoogleSubmitting(true);
     try {
       await signInGoogle();
       navigate('/dashboard');
     } catch {
       // Error handled in context
     } finally {
-      setIsSubmitting(false);
+      setIsGoogleSubmitting(false);
     }
   };
 
@@ -132,16 +143,18 @@ export default function Login() {
           </div>
 
           <AnimatePresence>
-            {error && (
+            {(error || localError) && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
+                role="alert"
+                aria-live="assertive"
                 className="bg-rose-50 border border-rose-100 text-rose-700 p-4 rounded-[1.5rem] flex items-center gap-3 text-sm font-bold relative group"
               >
                 <AlertCircle className="h-5 w-5 shrink-0" />
-                <span className="flex-1">{error}</span>
-                <button onClick={clearError} className="opacity-40 hover:opacity-100 transition-opacity">
+                <span className="flex-1">{error || localError}</span>
+                <button onClick={() => { clearError(); setLocalError(null); }} className="opacity-40 hover:opacity-100 transition-opacity">
                   <Fingerprint className="h-4 w-4" />
                 </button>
               </motion.div>
@@ -192,7 +205,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              disabled={isSubmitting || loading}
+              disabled={isSubmitting || loading || isGoogleSubmitting}
               className="w-full h-16 bg-[#0f3d5c] hover:bg-[#0d3049] text-white rounded-[1.5rem] shadow-2xl shadow-emerald-200/30 text-sm font-black uppercase tracking-[0.2em] transition-all group active:scale-[0.98]"
             >
               {isSubmitting ? <Loader2 className="animate-spin h-5 w-5" /> : (
@@ -213,11 +226,12 @@ export default function Login() {
             onClick={handleGoogle}
             type="button"
             variant="outline"
-            disabled={isSubmitting || loading}
+            disabled={isSubmitting || loading || isGoogleSubmitting}
+            aria-busy={isGoogleSubmitting}
             className="w-full h-16 border-emerald-100 hover:bg-emerald-50 rounded-[1.5rem] text-sm font-black uppercase tracking-widest gap-3 transition-all hover:border-emerald-200 text-emerald-700"
           >
-            <Chrome className="h-5 w-5 text-emerald-600" />
-            Google Connect
+            {isGoogleSubmitting ? <Loader2 className="h-5 w-5 animate-spin text-emerald-600" /> : <Chrome className="h-5 w-5 text-emerald-600" />}
+            {isGoogleSubmitting ? 'Redirigiendo con Google…' : 'Continuar con Google'}
           </Button>
 
           <p className="text-center text-slate-500 text-sm font-medium">

@@ -39,6 +39,7 @@ import {
     PaymentStatus,
     User as UserType,
 } from '@/types';
+import { KycDecision } from './kycEngine';
 // import { calculateMonthlyPayment, calculateTotalRepayment } from './finance'; // Commented out as finance logic might need update, doing simple calc for now or ignoring
 
 export async function uploadFile(path: string, file?: File) {
@@ -59,6 +60,78 @@ export async function submitKyc(uid: string, payload: { frontIdRef: string; back
     };
     await setDoc(ref, record, { merge: true });
     return record;
+}
+
+export async function saveKycDocument(
+    uid: string,
+    docMeta: { path: string; url?: string; type: string },
+    formData: KYC['formData']
+) {
+    const ref = doc(db, 'kyc', uid).withConverter(kycConverter);
+    const record: Partial<KYC> = {
+        documentRef: {
+            path: docMeta.path,
+            url: docMeta.url,
+            type: docMeta.type,
+            uploadedAt: Timestamp.now(),
+            status: 'uploaded',
+        },
+        formData,
+        status: 'pending',
+        updatedAt: Timestamp.now(),
+    };
+    await setDoc(ref, record, { merge: true });
+}
+
+export async function saveKycDecision(uid: string, verification: KycDecision, locale: string) {
+    const ref = doc(db, 'kyc', uid).withConverter(kycConverter);
+    const payload: Partial<KYC> = {
+        verification: {
+            status: verification.status as KYC['status'],
+            score: verification.score,
+            reasons: verification.reasons,
+            extracted: verification.extracted,
+            provider: verification.provider,
+            attempts: verification.attempts,
+            verifiedAt: Timestamp.now(),
+            localeAtVerification: locale,
+        },
+        status:
+            verification.status === 'fail'
+                ? 'rejected'
+                : (verification.status as KYC['status']),
+        updatedAt: Timestamp.now(),
+    };
+    await setDoc(ref, payload, { merge: true });
+}
+
+export async function requestManualReview(uid: string, current: KYC | null) {
+    const ref = doc(db, 'kyc', uid).withConverter(kycConverter);
+    const payload: Partial<KYC> = {
+        verification: {
+            ...(current?.verification || {}),
+            score: current?.verification?.score ?? 0,
+            status: 'manual_review_requested',
+            manualReason: 'AUTO_FAIL_USER_OVERRIDE',
+            reasons: current?.verification?.reasons ?? ['manual_override'],
+            provider: current?.verification?.provider ?? 'manual',
+            attempts: {
+                auto: current?.verification?.attempts?.auto ?? 1,
+                manualOverride: true,
+            },
+            verifiedAt: Timestamp.now(),
+        },
+        status: 'manual_review_requested',
+        updatedAt: Timestamp.now(),
+    };
+    await setDoc(ref, payload, { merge: true });
+    const reviewsRef = collection(db, 'kyc_reviews');
+    await addDoc(reviewsRef, {
+        uid,
+        status: 'manual_review_requested',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+    });
 }
 
 export async function registerCollateral(

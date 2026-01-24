@@ -26,10 +26,24 @@ export default function Register() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (error) clearError();
+    if (!fullName.trim()) {
+      setLocalError('Añade tu nombre completo (Ej: Ana Gómez)');
+      return;
+    }
+    if (!email.includes('@')) {
+      setLocalError('Usa un correo válido, Ej: persona@correo.com');
+      return;
+    }
+    if (password.length < 6) {
+      setLocalError('La contraseña debe tener mínimo 6 caracteres.');
+      return;
+    }
+    setLocalError(null);
     setIsSubmitting(true);
     try {
       await signUpEmail(email, password, fullName, phone);
@@ -66,7 +80,7 @@ export default function Register() {
           </div>
 
           <AnimatePresence>
-            {error && (
+            {(error || localError) && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -74,8 +88,8 @@ export default function Register() {
                 className="mb-8 p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-sm font-bold flex items-center gap-3"
               >
                 <AlertCircle className="h-5 w-5 shrink-0" />
-                <span className="flex-1">{error}</span>
-                <button onClick={clearError} className="font-black text-lg">&times;</button>
+                <span className="flex-1">{error || localError}</span>
+                <button onClick={() => { clearError(); setLocalError(null); }} className="font-black text-lg">&times;</button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -89,7 +103,7 @@ export default function Register() {
                   type="text"
                   required
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
-                  placeholder="John Doe"
+                  placeholder="Ej: Ana Gómez"
                   value={fullName}
                   onChange={(e) => {
                     setFullName(e.target.value);
@@ -107,7 +121,7 @@ export default function Register() {
                   type="tel"
                   required
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
-                  placeholder="+32 ..."
+                  placeholder="+32 470 000 000"
                   value={phone}
                   onChange={(e) => {
                     setPhone(e.target.value);
@@ -125,7 +139,7 @@ export default function Register() {
                   type="email"
                   required
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
-                  placeholder="email@example.com"
+                  placeholder="correo@ejemplo.com"
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
@@ -143,7 +157,7 @@ export default function Register() {
                   type="password"
                   required
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
-                  placeholder="••••••••"
+                  placeholder="Mínimo 6 caracteres"
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);

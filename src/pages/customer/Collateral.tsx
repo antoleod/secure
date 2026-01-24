@@ -46,6 +46,7 @@ export default function CustomerCollateral() {
     });
     const [photos, setPhotos] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
 
     const { data: items, isLoading } = useQuery({
         queryKey: ['collaterals', user?.uid],
@@ -57,6 +58,23 @@ export default function CustomerCollateral() {
         mutationFn: async () => {
             if (!user) return;
             setErrorMsg(null);
+            setLocalError(null);
+            if (!form.brandModel.trim()) {
+                setLocalError('Agrega marca/modelo (Ej: MacBook Pro 14)');
+                return;
+            }
+            if (!form.serialImei.trim()) {
+                setLocalError('Agrega IMEI/Serie (Ej: SN123456789)');
+                return;
+            }
+            if (!form.condition.trim()) {
+                setLocalError('Describe la condición (Ej: Como nuevo)');
+                return;
+            }
+            if (!form.estimatedValue || form.estimatedValue <= 0) {
+                setLocalError('Ingresa un valor estimado mayor a 0 (Ej: 1200)');
+                return;
+            }
             if (photos.length === 0 && ENABLE_UPLOADS) {
                 setErrorMsg('Agrega al menos 1 foto para poder continuar.');
                 return;
@@ -158,6 +176,11 @@ export default function CustomerCollateral() {
                                     {(!ENABLE_UPLOADS) && (
                                         <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 text-sm font-semibold px-4 py-3">
                                             Subida de fotos deshabilitada. Activa <code className="font-mono text-xs">VITE_ENABLE_UPLOADS=true</code> y configura Firebase Storage para adjuntar imágenes.
+                                        </div>
+                                    )}
+                                    {localError && (
+                                        <div className="rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold px-4 py-3">
+                                            {localError}
                                         </div>
                                     )}
                                     {errorMsg && (

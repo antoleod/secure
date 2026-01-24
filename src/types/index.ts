@@ -18,13 +18,51 @@ export interface User {
 }
 
 // KYC types
-export type KYCStatus = 'pending' | 'verified' | 'rejected';
+export type KYCStatus = 'pending' | 'verified' | 'rejected' | 'needs_review' | 'manual_review_requested';
 
 export interface KYC {
     uid: string;
-    frontIdRef: string;
-    backIdRef: string;
+    frontIdRef?: string;
+    backIdRef?: string;
     selfieRef?: string;
+    documentRef?: {
+        path: string;
+        url?: string;
+        type: string;
+        uploadedAt: Timestamp;
+        status: 'uploaded' | 'processing' | 'processed';
+    };
+    formData?: {
+        fullName: string;
+        dob: string;
+        documentNumber?: string;
+        nationalNumber?: string;
+        email?: string;
+        locale?: string;
+    };
+    verification?: {
+        status: KYCStatus | 'fail';
+        score: number;
+        reasons: string[];
+        provider: 'mock' | 'manual';
+        extracted?: {
+            fullName?: string;
+            givenNames?: string;
+            surname?: string;
+            dateOfBirth?: string;
+            documentNumber?: string;
+            nationalRegisterNumber?: string;
+            expiryDate?: string;
+            docType?: string;
+            mrzPresent?: boolean;
+            mrzValid?: boolean;
+        };
+        attempts?: { auto: number; manualOverride: boolean };
+        verifiedAt?: Timestamp;
+        verifiedBy?: string;
+        localeAtVerification?: string;
+        manualReason?: string;
+    };
     status: KYCStatus;
     verifiedAt?: Timestamp;
     verifiedBy?: string;

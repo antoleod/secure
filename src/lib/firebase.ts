@@ -4,7 +4,7 @@ import { getAnalytics, isSupported, Analytics } from 'firebase/analytics';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
-const firebaseConfig = {
+const firebaseConfig: Record<string, string | undefined> = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
@@ -14,42 +14,43 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Validación de configuración crítica
-const requiredKeys = [
-  'apiKey',
-  'authDomain',
-  'projectId',
-  'storageBucket',
-  'messagingSenderId',
-  'appId'
-] as const;
+const fallbackAuthDomain =
+  firebaseConfig.projectId && `${firebaseConfig.projectId as string}.firebaseapp.com`;
+const hasTrustedAuthDomain =
+  typeof firebaseConfig.authDomain === 'string' &&
+  /firebaseapp\.com$|web\.app$/.test(firebaseConfig.authDomain);
 
-const missingKeys = requiredKeys.filter(key => !firebaseConfig[key]);
-
-if (missingKeys.length > 0) {
-  throw new Error(
-    `Falta configuración de Firebase: ${missingKeys.join(', ')}. Verifica tu archivo .env.local`
+if (!hasTrustedAuthDomain && fallbackAuthDomain) {
+  console.warn(
+    '[auth] authDomain no coincide con el dominio del proyecto. Usando el dominio de Firebase para evitar errores en popup/redirect.'
   );
+  firebaseConfig.authDomain = fallbackAuthDomain;
 }
 
-// Inicializamos y exponemos instancias tipadas no opcionales para evitar checks en toda la app
-// Inicializamos y exponemos instancias tipadas no opcionales para evitar checks en toda la app
+const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'] as const;
+const missingKeys = requiredKeys.filter((key) => !firebaseConfig[key]);
+
+if (missingKeys.length > 0) {
+  throw new Error(`Falta configuración de Firebase: ${missingKeys.join(', ')}. Verifica tu archivo .env.local`);
+}
+
 const app: FirebaseApp = initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
 const analytics: Promise<Analytics | null> = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
 
-// Conexión a Emuladores
 if (import.meta.env.VITE_USE_EMULATORS === 'true') {
-  console.warn('⚠️ Usando Firebase Emulators');
-  const { connectAuthEmulator } = await import('firebase/auth');
-  const { connectFirestoreEmulator } = await import('firebase/firestore');
-  const { connectStorageEmulator } = await import('firebase/storage');
+  (async () => {
+    console.warn('WARN: Usando Firebase Emulators');
+    const { connectAuthEmulator } = await import('firebase/auth');
+    const { connectFirestoreEmulator } = await import('firebase/firestore');
+    const { connectStorageEmulator } = await import('firebase/storage');
 
-  connectAuthEmulator(auth, 'http://localhost:9099');
-  connectFirestoreEmulator(db, 'localhost', 8080);
-  connectStorageEmulator(storage, 'localhost', 9199);
+    connectAuthEmulator(auth, 'http://localhost:9099');
+    connectFirestoreEmulator(db, 'localhost', 8080);
+    connectStorageEmulator(storage, 'localhost', 9199);
+  })();
 }
 
 export { app, auth, db, storage, analytics };

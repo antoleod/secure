@@ -5,13 +5,13 @@ import {
   signOut as firebaseSignOut,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
+  getRedirectResult,
   sendPasswordResetEmail,
   AuthError,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { googleSignInSmart } from '../lib/auth/googleSignInSmart';
 import { User as UserType } from '../types';
 
 export interface AuthContextType {
@@ -79,6 +79,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await setDoc(docRef, newUser);
     return newUser;
   };
+
+  useEffect(() => {
+    if (hasInvalidConfig) return;
+
+    let isMounted = true;
+
+    const checkRedirectLogin = async () => {
+      try {
+        const redirectResult = await getRedirectResult(auth);
+        if (redirectResult?.user && isMounted) {
+          setUser(redirectResult.user);
+          await ensureUserProfile(redirectResult.user);
+        }
+      } catch (err) {
+        handleError(err);
+      }
+    };
+
+    checkRedirectLogin();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hasInvalidConfig]);
 
   useEffect(() => {
     if (hasInvalidConfig) return;
@@ -160,8 +184,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       case 'auth/weak-password':
         setError('La contrasena es muy debil (minimo 6 caracteres).');
         break;
+      case 'auth/popup-blocked':
+        setError('El navegador bloqueo el popup. Usando redireccion segura.');
+        break;
       case 'auth/popup-closed-by-user':
-        setError('Se cerro la ventana de inicio de sesion.');
+        setError('Se cerro la ventana de inicio de sesion. Reintentando con redireccion.');
+        break;
+      case 'auth/unauthorized-domain':
+        setError('Dominio no autorizado para este flujo. Usaremos redireccion.');
+        break;
+      case 'auth/operation-not-supported-in-this-environment':
+        setError('El navegador no permite el popup. Usaremos redireccion.');
         break;
       default:
         setError('Ocurrio un error al autenticar. Intenta de nuevo.');
@@ -212,12 +245,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInGoogle = async () => {
-    setError(null);
     setLoading(true);
     try {
-      const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(auth, provider);
-      await ensureUserProfile(cred.user);
+      await googleSignInSmart({
+        auth,
+        onSuccess: async (cred) => {
+          await ensureUserProfile(cred.user);
+        },
+        setError,
+        logger: console,
+      });
     } catch (err) {
       handleError(err);
       throw err;
