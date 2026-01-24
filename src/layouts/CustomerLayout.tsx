@@ -15,7 +15,10 @@ import {
     HelpCircle,
     LogOut,
     Bell,
-    ChevronRight
+    ChevronRight,
+    Menu,
+    X,
+    Plus
 } from 'lucide-react';
 import secureIcon from '@/assets/secure-icon.svg';
 
@@ -25,6 +28,7 @@ export function CustomerLayout() {
     const navigate = useNavigate();
     const location = useLocation();
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // Scroll progress line
     const { scrollYProgress } = useScroll();
@@ -119,6 +123,13 @@ export function CustomerLayout() {
                                 );
                             })}
                         </nav>
+                        <button
+                            className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-xl bg-white border border-slate-200 text-slate-600"
+                            aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+                            onClick={() => setIsMenuOpen((open) => !open)}
+                        >
+                            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                        </button>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -166,6 +177,42 @@ export function CustomerLayout() {
                 </div>
             </header>
 
+            <AnimatePresence>
+                {isMenuOpen && (
+                    <motion.nav
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="md:hidden bg-white border-b border-slate-200 shadow-sm"
+                    >
+                        <div className="px-6 py-4 space-y-3">
+                            {headerLinks.map((link) => {
+                                const active = isActive(link.to);
+                                return (
+                                    <Link
+                                        key={link.to}
+                                        to={link.to}
+                                        onClick={() => setIsMenuOpen(false)}
+                                        className={`flex items-center gap-3 py-2 text-sm font-bold ${active ? 'text-blue-700' : 'text-slate-700'}`}
+                                    >
+                                        <link.icon className="h-4 w-4" />
+                                        {link.label}
+                                    </Link>
+                                );
+                            })}
+                            <Link
+                                to="/app/collateral"
+                                onClick={() => setIsMenuOpen(false)}
+                                className="flex items-center gap-3 py-2 text-sm font-black text-emerald-700"
+                            >
+                                <Plus className="h-4 w-4" />
+                                {t('collateral.add.cta')}
+                            </Link>
+                        </div>
+                    </motion.nav>
+                )}
+            </AnimatePresence>
+
             {/* ROUTE CONTENT WITH SPRING ANIMATIONS */}
             <main className="flex-1 container mx-auto px-6 py-10 relative">
                 <AnimatePresence mode="wait">
@@ -180,6 +227,33 @@ export function CustomerLayout() {
                     </motion.div>
                 </AnimatePresence>
             </main>
+
+            <footer className="bg-slate-900 text-slate-100 mt-12">
+                <div className="container mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="space-y-2">
+                        <p className="text-lg font-black tracking-tight flex items-center gap-2">
+                            <img src={secureIcon} alt="Secure" className="w-8 h-8" loading="lazy" />
+                            Secure.
+                        </p>
+                        <p className="text-sm text-slate-300 max-w-xs">Liquidez rápida con tus activos, con transparencia y soporte humano.</p>
+                    </div>
+                    <div className="space-y-2">
+                        <p className="text-[11px] uppercase tracking-[0.3em] font-black text-slate-400">Navegación</p>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                            <Link to="/app" className="hover:text-white">Dashboard</Link>
+                            <Link to="/app/collateral" className="hover:text-white">Empeños</Link>
+                            <Link to="/app/loans" className="hover:text-white">Préstamos</Link>
+                            <Link to="/app/help" className="hover:text-white">Soporte</Link>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <p className="text-[11px] uppercase tracking-[0.3em] font-black text-slate-400">Ayuda</p>
+                        <a href="mailto:soporte@oryxen.tech" className="block text-sm hover:text-white">soporte@oryxen.tech</a>
+                        <p className="text-xs text-slate-400">Build: {import.meta.env.VITE_APP_VERSION || 'dev'}</p>
+                    </div>
+                </div>
+                <div className="border-t border-slate-800 px-6 py-4 text-center text-xs text-slate-500">© {new Date().getFullYear()} Secure. Todos los derechos reservados.</div>
+            </footer>
 
             {/* FLOATING ACTION DOCK (IOS STYLE) */}
             <nav className="fixed bottom-0 left-0 right-0 z-[100] px-6 pb-10 pointer-events-none">
@@ -238,3 +312,5 @@ export function CustomerLayout() {
         </div>
     );
 }
+
+export default CustomerLayout;

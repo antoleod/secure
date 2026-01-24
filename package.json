@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "postbuild": "node scripts/verify-dist.js",
+    "analyze:bundle": "npm run build && node scripts/bundle-report.js",
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "format": "prettier --write \"{src,public,tests}/**/*.{ts,tsx,js,jsx,css,md,html,json}\"",

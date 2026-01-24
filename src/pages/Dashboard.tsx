@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
@@ -6,9 +6,11 @@ import { Loader2 } from 'lucide-react';
 export default function DashboardRedirect() {
   const { userData, loading } = useAuth();
   const navigate = useNavigate();
+  const hasNavigated = useRef(false);
 
   useEffect(() => {
-    if (!loading && userData) {
+    if (!loading && userData && !hasNavigated.current) {
+      hasNavigated.current = true;
       if (userData.role === 'admin') {
         navigate('/admin', { replace: true });
       } else {

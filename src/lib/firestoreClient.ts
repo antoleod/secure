@@ -1,6 +1,7 @@
 import {
     addDoc,
     collection,
+    deleteDoc,
     doc,
     getDoc,
     getDocs,
@@ -12,6 +13,7 @@ import {
     Timestamp,
     updateDoc,
     where,
+    writeBatch,
 } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage, ENABLE_UPLOADS } from './firebase';
@@ -24,6 +26,7 @@ import {
     loyaltyConverter,
     paymentConverter,
     settingsConverter,
+    userConverter,
 } from './converters';
 import {
     AuditAction,
@@ -214,6 +217,12 @@ export async function listCollaterals(ownerUid: string) {
         where('ownerUid', '==', ownerUid),
         orderBy('createdAt', 'desc')
     );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.data());
+}
+
+export async function listAllCollaterals() {
+    const q = query(collection(db, 'collaterals').withConverter(collateralConverter), orderBy('createdAt', 'desc'));
     const snap = await getDocs(q);
     return snap.docs.map((d) => d.data());
 }
@@ -497,6 +506,57 @@ export async function listAuditLogs() {
     const q = query(collection(db, 'audit_logs').withConverter(auditLogConverter), orderBy('timestamp', 'desc'));
     const snap = await getDocs(q);
     return snap.docs.map((d) => d.data());
+}
+
+export async function listAllUsers() {
+    const snap = await getDocs(collection(db, 'users').withConverter(userConverter));
+    return snap.docs.map((d) => d.data());
+}
+
+export async function deleteCollateral(collateralId: string, adminUid?: string) {
+    const ref = doc(db, 'collaterals', collateralId).withConverter(collateralConverter);
+    await deleteDoc(ref);
+
+    if (adminUid) {
+        const auditRef = doc(collection(db, 'audit_logs')).withConverter(auditLogConverter);
+        await setDoc(auditRef, {
+            action: 'user_status_changed',
+            actorUid: adminUid,
+            actorRole: 'admin',
+            entityType: 'loan',
+            entityId: collateralId,
+            details: { deleted: true },
+            timestamp: Timestamp.now(),
+        } as AuditLog);
+    }
+}
+
+export async function deleteUserData(adminUid: string, targetUid: string) {
+    // Delete user document and their collaterals in a batch to keep UI in sync.
+    const batch = writeBatch(db);
+    const collRef = query(
+        collection(db, 'collaterals').withConverter(collateralConverter),
+        where('ownerUid', '==', targetUid)
+    );
+    const collSnap = await getDocs(collRef);
+    collSnap.forEach((docSnap) => {
+        batch.delete(docSnap.ref);
+    });
+
+    const userRef = doc(db, 'users', targetUid).withConverter(userConverter);
+    batch.delete(userRef);
+    await batch.commit();
+
+    const auditRef = doc(collection(db, 'audit_logs')).withConverter(auditLogConverter);
+    await setDoc(auditRef, {
+        action: 'user_status_changed',
+        actorUid: adminUid,
+        actorRole: 'admin',
+        entityType: 'user',
+        entityId: targetUid,
+        details: { deleted: true, collateralsDeleted: collSnap.size },
+        timestamp: Timestamp.now(),
+    } as AuditLog);
 }
 
 export async function fetchKyc(uid: string) {

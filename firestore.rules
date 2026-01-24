@@ -79,7 +79,7 @@ service cloud.firestore {
                     (isAuthenticated() && resource.data.ownerUid == request.auth.uid) ||
                     (resource.data.isForSale == true);
       
-      allow create: if isCustomer() && request.resource.data.ownerUid == request.auth.uid;
+      allow create: if (isCustomer() || isAdmin()) && request.resource.data.ownerUid == request.auth.uid;
       allow update: if isAdmin();
     }
 

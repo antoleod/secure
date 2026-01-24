@@ -1,86 +1,91 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import { PageSkeleton } from './components/PageSkeleton';
 
-// Layouts
-import { AdminLayout } from './layouts/AdminLayout';
-import { CustomerLayout } from './layouts/CustomerLayout';
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const DashboardRedirect = lazy(() => import('./pages/Dashboard'));
 
-// Public Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ResetPassword from './pages/ResetPassword';
-import DashboardRedirect from './pages/Dashboard';
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const CustomerLayout = lazy(() => import('./layouts/CustomerLayout'));
 
-// Admin Pages
-import AdminDashboard from './pages/admin/Dashboard';
-import AdminClients from './pages/admin/Clients';
-import AdminRequests from './pages/admin/Requests';
-import AdminLoans from './pages/admin/Loans';
-import AdminPayments from './pages/admin/Payments';
-import AdminSettings from './pages/admin/Settings';
-import AdminAudit from './pages/admin/Audit';
+const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
+const AdminClients = lazy(() => import('./pages/admin/Clients'));
+const AdminRequests = lazy(() => import('./pages/admin/Requests'));
+const AdminLoans = lazy(() => import('./pages/admin/Loans'));
+const AdminPayments = lazy(() => import('./pages/admin/Payments'));
+const AdminSettings = lazy(() => import('./pages/admin/Settings'));
+const AdminAudit = lazy(() => import('./pages/admin/Audit'));
 
-// Customer Pages
-import CustomerDashboard from './pages/customer/Dashboard';
-import CustomerIdentity from './pages/customer/Identity';
-import CustomerCollateral from './pages/customer/Collateral';
-import CustomerLoans from './pages/customer/Loans';
-import CustomerPayments from './pages/customer/Payments';
-import CustomerStore from './pages/customer/Store';
-import CustomerLoyalty from './pages/customer/Loyalty';
-import CustomerHelp from './pages/customer/Help';
+const CustomerDashboard = lazy(() => import('./pages/customer/Dashboard'));
+const CustomerIdentity = lazy(() => import('./pages/customer/Identity'));
+const CustomerCollateral = lazy(() => import('./pages/customer/Collateral'));
+const CustomerLoans = lazy(() => import('./pages/customer/Loans'));
+const CustomerPayments = lazy(() => import('./pages/customer/Payments'));
+const CustomerStore = lazy(() => import('./pages/customer/Store'));
+const CustomerLoyalty = lazy(() => import('./pages/customer/Loyalty'));
+const CustomerHelp = lazy(() => import('./pages/customer/Help'));
 
 function App() {
   return (
     <AuthProvider>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/reset" element={<ResetPassword />} />
+      <Suspense fallback={<PageSkeleton />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/reset" element={<ResetPassword />} />
 
-        {/* Root Redirector */}
-        <Route
-          path="/dashboard"
-          element={<ProtectedRoute><DashboardRedirect /></ProtectedRoute>}
-        />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardRedirect />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* Admin Routes */}
-        <Route path="/admin" element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <AdminLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<AdminDashboard />} />
-          <Route path="clients" element={<AdminClients />} />
-          <Route path="requests" element={<AdminRequests />} />
-          <Route path="loans" element={<AdminLoans />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="audit" element={<AdminAudit />} />
-          <Route path="payments" element={<AdminPayments />} />
-        </Route>
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="clients" element={<AdminClients />} />
+            <Route path="requests" element={<AdminRequests />} />
+            <Route path="loans" element={<AdminLoans />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="audit" element={<AdminAudit />} />
+            <Route path="payments" element={<AdminPayments />} />
+          </Route>
 
-        {/* Customer Routes */}
-        <Route path="/app" element={
-          <ProtectedRoute allowedRoles={['customer']}>
-            <CustomerLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<CustomerDashboard />} />
-          <Route path="verify-identity" element={<CustomerIdentity />} />
-          <Route path="collateral" element={<CustomerCollateral />} />
-          <Route path="loans" element={<CustomerLoans />} />
-          <Route path="payments" element={<CustomerPayments />} />
-          <Route path="store" element={<CustomerStore />} />
-          <Route path="loyalty" element={<CustomerLoyalty />} />
-          <Route path="help" element={<CustomerHelp />} />
-        </Route>
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute allowedRoles={['customer']}>
+                <CustomerLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<CustomerDashboard />} />
+            <Route path="verify-identity" element={<CustomerIdentity />} />
+            <Route path="collateral" element={<CustomerCollateral />} />
+            <Route path="loans" element={<CustomerLoans />} />
+            <Route path="payments" element={<CustomerPayments />} />
+            <Route path="store" element={<CustomerStore />} />
+            <Route path="loyalty" element={<CustomerLoyalty />} />
+            <Route path="help" element={<CustomerHelp />} />
+          </Route>
 
-        {/* Catch all */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </AuthProvider>
   );
 }

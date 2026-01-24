@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
@@ -25,25 +25,40 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+
+  const summaryError = useMemo(() => {
+    const missing = Object.keys(fieldErrors).filter((key) => fieldErrors[key]);
+    if (missing.length === 0) return null;
+    return `Faltan: ${missing.map((k) => fieldErrors[k]).join(', ')}`;
+  }, [fieldErrors]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (error) clearError();
+    const nextErrors: Record<string, string> = {};
     if (!email.includes('@')) {
-      setLocalError('Usa un correo válido, ej. persona@correo.com');
-      return;
+      nextErrors.email = 'correo válido';
     }
     if (password.length < 6) {
-      setLocalError('La contraseña debe tener al menos 6 caracteres.');
+      nextErrors.password = 'contraseña válida';
+    }
+    setFieldErrors(nextErrors);
+    setLocalError(null);
+    if (Object.keys(nextErrors).length) {
+      if (nextErrors.email) emailRef.current?.focus();
+      else if (nextErrors.password) passwordRef.current?.focus();
       return;
     }
-    setLocalError(null);
     setIsSubmitting(true);
     try {
       await signInEmail(email, password);
       navigate('/dashboard');
     } catch {
-      // Error handled in context
+      setPassword('');
+      passwordRef.current?.focus();
     } finally {
       setIsSubmitting(false);
     }
@@ -143,7 +158,7 @@ export default function Login() {
           </div>
 
           <AnimatePresence>
-            {(error || localError) && (
+            {(error || localError || summaryError) && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -153,7 +168,10 @@ export default function Login() {
                 className="bg-rose-50 border border-rose-100 text-rose-700 p-4 rounded-[1.5rem] flex items-center gap-3 text-sm font-bold relative group"
               >
                 <AlertCircle className="h-5 w-5 shrink-0" />
-                <span className="flex-1">{error || localError}</span>
+                <div className="flex-1 space-y-1">
+                  <span>{error || localError || summaryError}</span>
+                  {summaryError && <p className="text-[11px] font-semibold text-rose-600">{summaryError}</p>}
+                </div>
                 <button onClick={() => { clearError(); setLocalError(null); }} className="opacity-40 hover:opacity-100 transition-opacity">
                   <Fingerprint className="h-4 w-4" />
                 </button>
@@ -173,11 +191,14 @@ export default function Login() {
                     className="h-16 pl-14 bg-white border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-emerald-400 font-bold text-slate-900 transition-all"
                     placeholder="email@secure.tech"
                     value={email}
+                    ref={emailRef}
                     onChange={(e) => {
                       setEmail(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, email: '' }));
                       if (error) clearError();
                     }}
                   />
+                  {fieldErrors.email && <p className="text-rose-600 text-xs font-semibold mt-1 ml-1">Ingresa un {fieldErrors.email}</p>}
                 </div>
               </div>
 
@@ -194,11 +215,14 @@ export default function Login() {
                     className="h-16 pl-14 bg-white border-slate-100 rounded-[1.5rem] shadow-sm focus:ring-emerald-400 font-bold text-slate-900 transition-all"
                     placeholder="••••••••"
                     value={password}
+                    ref={passwordRef}
                     onChange={(e) => {
                       setPassword(e.target.value);
+                      setFieldErrors((prev) => ({ ...prev, password: '' }));
                       if (error) clearError();
                     }}
                   />
+                  {fieldErrors.password && <p className="text-rose-600 text-xs font-semibold mt-1 ml-1">Ingresa una {fieldErrors.password}</p>}
                 </div>
               </div>
             </div>

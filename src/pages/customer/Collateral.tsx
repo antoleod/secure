@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,37 +47,61 @@ export default function CustomerCollateral() {
     const [photos, setPhotos] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const summaryRef = useRef<HTMLDivElement | null>(null);
+    const brandRef = useRef<HTMLInputElement | null>(null);
+    const serialRef = useRef<HTMLInputElement | null>(null);
+    const conditionRef = useRef<HTMLInputElement | null>(null);
+    const valueRef = useRef<HTMLInputElement | null>(null);
+    const missingRequired = useMemo(
+        () =>
+            !form.brandModel.trim() ||
+            !form.serialImei.trim() ||
+            !form.condition.trim() ||
+            !form.estimatedValue ||
+            form.estimatedValue <= 0 ||
+            (ENABLE_UPLOADS && photos.length === 0),
+        [form.brandModel, form.serialImei, form.condition, form.estimatedValue, photos.length]
+    );
 
     const { data: items, isLoading } = useQuery({
         queryKey: ['collaterals', user?.uid],
         queryFn: () => listCollaterals(user!.uid),
         enabled: !!user?.uid,
+        staleTime: 1000 * 60 * 3,
+        gcTime: 1000 * 60 * 10,
+        refetchOnWindowFocus: false,
     });
+
+    const validateForm = () => {
+        const nextErrors: Record<string, string> = {};
+        if (!form.brandModel.trim()) nextErrors.brandModel = 'Agrega marca/modelo (Ej: MacBook Pro 14)';
+        if (!form.serialImei.trim()) nextErrors.serialImei = 'Agrega IMEI/Serie (Ej: SN123456789)';
+        if (!form.condition.trim()) nextErrors.condition = 'Describe la condición (Ej: Como nuevo)';
+        if (!form.estimatedValue || form.estimatedValue <= 0) nextErrors.estimatedValue = 'Ingresa un valor estimado mayor a 0 (Ej: 1200)';
+        if (photos.length === 0 && ENABLE_UPLOADS) nextErrors.photos = 'Agrega al menos 1 foto para continuar';
+
+        setFieldErrors(nextErrors);
+        if (Object.keys(nextErrors).length) {
+            summaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (nextErrors.brandModel) brandRef.current?.focus();
+            else if (nextErrors.serialImei) serialRef.current?.focus();
+            else if (nextErrors.condition) conditionRef.current?.focus();
+            else if (nextErrors.estimatedValue) valueRef.current?.focus();
+            return false;
+        }
+        return true;
+    };
 
     const mutation = useMutation({
         mutationFn: async () => {
             if (!user) return;
             setErrorMsg(null);
             setLocalError(null);
-            if (!form.brandModel.trim()) {
-                setLocalError('Agrega marca/modelo (Ej: MacBook Pro 14)');
-                return;
-            }
-            if (!form.serialImei.trim()) {
-                setLocalError('Agrega IMEI/Serie (Ej: SN123456789)');
-                return;
-            }
-            if (!form.condition.trim()) {
-                setLocalError('Describe la condición (Ej: Como nuevo)');
-                return;
-            }
-            if (!form.estimatedValue || form.estimatedValue <= 0) {
-                setLocalError('Ingresa un valor estimado mayor a 0 (Ej: 1200)');
-                return;
-            }
-            if (photos.length === 0 && ENABLE_UPLOADS) {
-                setErrorMsg('Agrega al menos 1 foto para poder continuar.');
-                return;
+            const isValid = validateForm();
+            if (!isValid) {
+                setLoading(false);
+                throw new Error('Campos requeridos faltantes');
             }
             setLoading(true);
             try {
@@ -104,6 +128,7 @@ export default function CustomerCollateral() {
             } catch (err) {
                 console.error(err);
                 setErrorMsg('No pudimos guardar la prenda. Verifica tu conexión y los permisos de almacenamiento.');
+                throw err;
             } finally {
                 setLoading(false);
             }
@@ -114,6 +139,10 @@ export default function CustomerCollateral() {
             setForm({ type: 'electronics', brandModel: '', serialImei: '', condition: '', estimatedValue: 0 });
             setPhotos([]);
         },
+        onError: () => {
+            // Keep form values; just ensure loading is false
+            setLoading(false);
+        }
     });
 
     const categories: Array<{
@@ -178,14 +207,12 @@ export default function CustomerCollateral() {
                                             Subida de fotos deshabilitada. Activa <code className="font-mono text-xs">VITE_ENABLE_UPLOADS=true</code> y configura Firebase Storage para adjuntar imágenes.
                                         </div>
                                     )}
-                                    {localError && (
-                                        <div className="rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold px-4 py-3">
-                                            {localError}
-                                        </div>
-                                    )}
-                                    {errorMsg && (
-                                        <div className="rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold px-4 py-3">
-                                            {errorMsg}
+                                    {(localError || errorMsg || Object.keys(fieldErrors).length > 0) && (
+                                        <div ref={summaryRef} className="rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold px-4 py-3 space-y-1">
+                                            {localError || errorMsg || 'Completa los campos marcados para continuar.'}
+                                            {Object.values(fieldErrors).length > 0 && (
+                                                <p className="text-[12px] font-bold">Faltan: {Object.values(fieldErrors).join(', ')}</p>
+                                            )}
                                         </div>
                                     )}
                                     <div className="space-y-3">
@@ -209,30 +236,74 @@ export default function CustomerCollateral() {
                                     <div className="space-y-6">
                                         <div className="space-y-3">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.brandModel')}</Label>
-                                            <Input className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold" placeholder="Ej: MacBook Pro M3 14'" value={form.brandModel} onChange={e => setForm({ ...form, brandModel: e.target.value })} />
+                                            <Input
+                                                className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold"
+                                                placeholder="Ej: MacBook Pro M3 14'"
+                                                value={form.brandModel}
+                                                ref={brandRef}
+                                                onChange={e => {
+                                                    setForm({ ...form, brandModel: e.target.value });
+                                                    setFieldErrors((prev) => ({ ...prev, brandModel: '' }));
+                                                }}
+                                            />
+                                            {fieldErrors.brandModel && <p className="text-rose-600 text-xs font-semibold ml-1">{fieldErrors.brandModel}</p>}
                                         </div>
                                         <div className="grid grid-cols-2 gap-6">
                                             <div className="space-y-3">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.serial')}</Label>
-                                                <Input className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold" placeholder="IMEI / Serial Number" value={form.serialImei} onChange={e => setForm({ ...form, serialImei: e.target.value })} />
+                                                <Input
+                                                    className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold"
+                                                    placeholder="IMEI / Serial Number"
+                                                    value={form.serialImei}
+                                                    ref={serialRef}
+                                                    onChange={e => {
+                                                        setForm({ ...form, serialImei: e.target.value });
+                                                        setFieldErrors((prev) => ({ ...prev, serialImei: '' }));
+                                                    }}
+                                                />
+                                                {fieldErrors.serialImei && <p className="text-rose-600 text-xs font-semibold ml-1">{fieldErrors.serialImei}</p>}
                                             </div>
                                             <div className="space-y-3">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.condition')}</Label>
-                                                <Input className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold" placeholder="Ej: Como nuevo" value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })} />
+                                                <Input
+                                                    className="h-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold"
+                                                    placeholder="Ej: Como nuevo"
+                                                    value={form.condition}
+                                                    ref={conditionRef}
+                                                    onChange={e => {
+                                                        setForm({ ...form, condition: e.target.value });
+                                                        setFieldErrors((prev) => ({ ...prev, condition: '' }));
+                                                    }}
+                                                />
+                                                {fieldErrors.condition && <p className="text-rose-600 text-xs font-semibold ml-1">{fieldErrors.condition}</p>}
                                             </div>
                                         </div>
                                         <div className="space-y-3">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{t('collateral.form.estimatedValue')}</Label>
                                             <div className="relative">
                                                 <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-400">€</span>
-                                                <Input type="number" className="h-14 pl-10 rounded-2xl border-slate-100 bg-slate-50/50 font-black text-xl" value={form.estimatedValue} onChange={e => setForm({ ...form, estimatedValue: Number(e.target.value) })} />
+                                                <Input
+                                                    type="number"
+                                                    className="h-14 pl-10 rounded-2xl border-slate-100 bg-slate-50/50 font-black text-xl"
+                                                    value={form.estimatedValue}
+                                                    ref={valueRef}
+                                                    onChange={e => {
+                                                        setForm({ ...form, estimatedValue: Number(e.target.value) });
+                                                        setFieldErrors((prev) => ({ ...prev, estimatedValue: '' }));
+                                                    }}
+                                                />
                                             </div>
+                                            {fieldErrors.estimatedValue && <p className="text-rose-600 text-xs font-semibold ml-1">{fieldErrors.estimatedValue}</p>}
                                         </div>
                                     </div>
 
                                     <div className="flex gap-4 pt-4">
                                         <Button variant="outline" type="button" onClick={() => setIsAdding(false)} className="flex-1 h-14 rounded-2xl border-slate-200 text-[10px] font-black uppercase tracking-widest">{t('common.cancel')}</Button>
-                                        <Button className="flex-[2] h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-100" disabled={loading || mutation.isPending}>
+                                        <Button
+                                            className="flex-[2] h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-100 disabled:opacity-70 disabled:cursor-not-allowed"
+                                            disabled={loading || mutation.isPending || missingRequired}
+                                            title={missingRequired ? 'Completa los campos requeridos antes de guardar' : undefined}
+                                        >
                                             {loading || mutation.isPending ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
                                             {t('collateral.form.submit')}
                                         </Button>
@@ -246,7 +317,7 @@ export default function CustomerCollateral() {
                                 <div className="grid grid-cols-2 gap-4">
                                     {photos.map((p, i) => (
                                         <div key={i} className="aspect-square bg-white rounded-3xl border border-slate-200 overflow-hidden relative group">
-                                            <img src={URL.createObjectURL(p)} className="w-full h-full object-cover" alt="Preview" />
+                                            <img src={URL.createObjectURL(p)} className="w-full h-full object-cover" alt="Preview" loading="lazy" />
                                             <button onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))} className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <Trash2 className="h-3 w-3" />
                                             </button>
@@ -260,6 +331,7 @@ export default function CustomerCollateral() {
                                         </label>
                                     )}
                                 </div>
+                                {fieldErrors.photos && <p className="text-rose-600 text-xs font-semibold mt-2">{fieldErrors.photos}</p>}
                                 <div className="mt-12 p-6 bg-[#0f3d5c] rounded-[2rem] text-white">
                                     <ShieldCheck className="h-8 w-8 mb-4" />
                                     <h4 className="font-black text-lg leading-tight mb-2">Protocolo de Custodia Secure</h4>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useI18n } from '../contexts/I18nContext';
@@ -27,29 +27,44 @@ export default function Register() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const fullNameRef = useRef<HTMLInputElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const phoneRef = useRef<HTMLInputElement | null>(null);
+  const passwordRef = useRef<HTMLInputElement | null>(null);
+
+  const summaryError = useMemo(() => {
+    const missing = Object.keys(fieldErrors).filter((k) => fieldErrors[k]);
+    if (!missing.length) return null;
+    return `Faltan: ${missing.map((k) => fieldErrors[k]).join(', ')}`;
+  }, [fieldErrors]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (error) clearError();
-    if (!fullName.trim()) {
-      setLocalError('Añade tu nombre completo (Ej: Ana Gómez)');
-      return;
-    }
-    if (!email.includes('@')) {
-      setLocalError('Usa un correo válido, Ej: persona@correo.com');
-      return;
-    }
-    if (password.length < 6) {
-      setLocalError('La contraseña debe tener mínimo 6 caracteres.');
-      return;
-    }
+    const nextErrors: Record<string, string> = {};
+    if (!fullName.trim()) nextErrors.fullName = 'nombre completo';
+    if (!phone.trim()) nextErrors.phone = 'telefono';
+    if (!email.includes('@')) nextErrors.email = 'correo válido';
+    if (password.length < 6) nextErrors.password = 'contraseña (6+)';
+
+    setFieldErrors(nextErrors);
     setLocalError(null);
+
+    if (Object.keys(nextErrors).length) {
+      if (nextErrors.fullName) fullNameRef.current?.focus();
+      else if (nextErrors.phone) phoneRef.current?.focus();
+      else if (nextErrors.email) emailRef.current?.focus();
+      else if (nextErrors.password) passwordRef.current?.focus();
+      return;
+    }
     setIsSubmitting(true);
     try {
       await signUpEmail(email, password, fullName, phone);
       navigate('/dashboard');
     } catch {
-      // Error handled in context
+      setPassword('');
+      passwordRef.current?.focus();
     } finally {
       setIsSubmitting(false);
     }
@@ -80,7 +95,7 @@ export default function Register() {
           </div>
 
           <AnimatePresence>
-            {(error || localError) && (
+            {(error || localError || summaryError) && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -88,7 +103,10 @@ export default function Register() {
                 className="mb-8 p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-sm font-bold flex items-center gap-3"
               >
                 <AlertCircle className="h-5 w-5 shrink-0" />
-                <span className="flex-1">{error || localError}</span>
+                <div className="flex-1 space-y-1">
+                  <span>{error || localError || summaryError}</span>
+                  {summaryError && <p className="text-[11px] font-semibold text-rose-600">{summaryError}</p>}
+                </div>
                 <button onClick={() => { clearError(); setLocalError(null); }} className="font-black text-lg">&times;</button>
               </motion.div>
             )}
@@ -105,12 +123,15 @@ export default function Register() {
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
                   placeholder="Ej: Ana Gómez"
                   value={fullName}
+                  ref={fullNameRef}
                   onChange={(e) => {
                     setFullName(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, fullName: '' }));
                     if (error) clearError();
                   }}
                 />
               </div>
+              {fieldErrors.fullName && <p className="text-rose-600 text-xs font-semibold ml-1">{fieldErrors.fullName} es requerido</p>}
             </div>
 
             <div className="space-y-2 md:col-span-1">
@@ -123,12 +144,15 @@ export default function Register() {
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
                   placeholder="+32 470 000 000"
                   value={phone}
+                  ref={phoneRef}
                   onChange={(e) => {
                     setPhone(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, phone: '' }));
                     if (error) clearError();
                   }}
                 />
               </div>
+              {fieldErrors.phone && <p className="text-rose-600 text-xs font-semibold ml-1">{fieldErrors.phone} es requerido</p>}
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -141,12 +165,15 @@ export default function Register() {
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
                   placeholder="correo@ejemplo.com"
                   value={email}
+                  ref={emailRef}
                   onChange={(e) => {
                     setEmail(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, email: '' }));
                     if (error) clearError();
                   }}
                 />
               </div>
+              {fieldErrors.email && <p className="text-rose-600 text-xs font-semibold ml-1">Ingresa un {fieldErrors.email}</p>}
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -159,12 +186,15 @@ export default function Register() {
                   className="h-16 pl-14 bg-white border-slate-100 rounded-2xl shadow-sm focus:ring-blue-500 font-bold"
                   placeholder="Mínimo 6 caracteres"
                   value={password}
+                  ref={passwordRef}
                   onChange={(e) => {
                     setPassword(e.target.value);
+                    setFieldErrors((prev) => ({ ...prev, password: '' }));
                     if (error) clearError();
                   }}
                 />
               </div>
+              {fieldErrors.password && <p className="text-rose-600 text-xs font-semibold ml-1">Ingresa una {fieldErrors.password}</p>}
             </div>
 
             <div className="md:col-span-2 pt-6">

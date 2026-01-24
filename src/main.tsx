@@ -7,7 +7,15 @@ import { I18nProvider } from './contexts/I18nContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './index.css';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 1000 * 60 * 3,
+    },
+  },
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

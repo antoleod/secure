@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
   User,
   onAuthStateChanged,
@@ -29,7 +29,7 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SUPER_ADMINS = ['jdioses@outlook.be', 'antoleod@gmail.com'];
+export const SUPER_ADMIN_EMAILS = ['jdioses@outlook.be', 'antoleod@gmail.com'];
 const DEFAULT_ROLE: UserType['role'] = 'customer';
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -49,9 +49,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(
     hasInvalidConfig ? 'La configuracion de Firebase es invalida. Revisa las variables de entorno.' : null
   );
+  const fallbackTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const buildUserProfile = (credUser: User, email: string): UserType => {
-    const isSuperAdmin = SUPER_ADMINS.includes(email);
+    const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email);
 
     return {
       uid: credUser.uid,
@@ -120,8 +121,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!nextUser) {
         setUserData(null);
         setLoading(false);
+        if (fallbackTimerRef.current) {
+          clearTimeout(fallbackTimerRef.current);
+          fallbackTimerRef.current = null;
+        }
         return;
       }
+
+      // Safety: if Firestore userData is blocked (incógnito sin IndexedDB), set a fallback after 4s
+      if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+      const timer = setTimeout(() => {
+        setUserData((prev) => {
+          if (prev) return prev;
+          const email = nextUser.email || '';
+          const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email);
+          return {
+            uid: nextUser.uid,
+            email,
+            role: isSuperAdmin ? 'admin' : DEFAULT_ROLE,
+            status: 'active',
+            fullName: nextUser.displayName || email || 'Usuario',
+            phone: '',
+            dob: '',
+            addressCityPostal: '',
+            createdAt: Timestamp.now(),
+          };
+        });
+        setLoading(false);
+      }, 4000);
+      fallbackTimerRef.current = timer;
 
       const docRef = doc(db, 'users', nextUser.uid);
       unsubscribeUserData = onSnapshot(
@@ -130,7 +158,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             if (docSnap.exists()) {
               const data = docSnap.data() as UserType;
-              if (nextUser.email && SUPER_ADMINS.includes(nextUser.email) && data.role !== 'admin') {
+              if (nextUser.email && SUPER_ADMIN_EMAILS.includes(nextUser.email) && data.role !== 'admin') {
                 setUserData({ ...data, role: 'admin' });
               } else {
                 setUserData(data);
@@ -138,6 +166,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             } else {
               const createdProfile = await ensureUserProfile(nextUser);
               setUserData(createdProfile);
+            }
+            if (fallbackTimerRef.current) {
+              clearTimeout(fallbackTimerRef.current);
+              fallbackTimerRef.current = null;
             }
           } catch (err) {
             console.error('Error ensuring user profile:', err);
@@ -159,6 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       unsubscribeAuth();
       if (unsubscribeUserData) unsubscribeUserData();
+      if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
     };
   }, [hasInvalidConfig]);
 
