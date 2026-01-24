@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { SUPER_ADMIN_EMAILS } from '../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -35,10 +36,16 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     );
   }
 
-  if (allowedRoles && userData && !allowedRoles.includes(userData.role)) {
-    // Redirect based on role to avoid getting stuck
-    if (userData.role === 'admin') return <Navigate to="/admin" replace />;
-    return <Navigate to="/app" replace />;
+  if (allowedRoles) {
+    const isSuperAdmin = user?.email ? SUPER_ADMIN_EMAILS.includes(user.email) : false;
+    if (isSuperAdmin && allowedRoles.includes('admin')) {
+      return <>{children}</>;
+    }
+    if (userData && !allowedRoles.includes(userData.role)) {
+      // Redirect based on role to avoid getting stuck
+      if (userData.role === 'admin') return <Navigate to="/admin" replace />;
+      return <Navigate to="/app" replace />;
+    }
   }
 
   return <>{children}</>;

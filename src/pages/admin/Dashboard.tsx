@@ -8,17 +8,17 @@ import { Link } from 'react-router-dom';
 
 export default function AdminDashboard() {
     // Data Fetching
-    const { data: requests } = useQuery({
+    const { data: requests, isLoading: loadingReqs, error: reqError } = useQuery({
         queryKey: ['admin_requests'],
         queryFn: () => listAdminRequests(),
     });
 
-    const { data: loans } = useQuery({
+    const { data: loans, isLoading: loadingLoans, error: loanError } = useQuery({
         queryKey: ['admin_loans'],
         queryFn: () => listAllLoans(),
     });
 
-    const { data: auditLogs } = useQuery({
+    const { data: auditLogs, isLoading: loadingAudit, error: auditError } = useQuery({
         queryKey: ['admin_audit'],
         queryFn: () => listAuditLogs(),
     });
@@ -30,6 +30,9 @@ export default function AdminDashboard() {
         totalCapitalLent: loans?.reduce((acc, curr) => acc + curr.principalCents, 0) || 0,
         recentActivity: auditLogs?.slice(0, 6) || [],
     }), [requests, loans, auditLogs]);
+
+    const anyLoading = loadingReqs || loadingLoans || loadingAudit;
+    const anyError = reqError || loanError || auditError;
 
     return (
         <div className="space-y-8 pb-32 font-sans animate-in fade-in duration-700">
@@ -53,6 +56,16 @@ export default function AdminDashboard() {
             </div>
 
             {/* QUICK STATS */}
+            {anyError && (
+                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-sm font-semibold">
+                    No pudimos cargar los datos de admin. Revisa tu conexión o permisos. {String(anyError)}
+                </div>
+            )}
+            {anyLoading && (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-slate-500 text-sm font-semibold">
+                    Cargando datos del panel…
+                </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="border-none bg-white shadow-sm overflow-hidden relative group">
                     <CardHeader className="pb-2">
@@ -141,7 +154,9 @@ export default function AdminDashboard() {
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold text-slate-800">{log.action.replace(/_/g, ' ').toUpperCase()}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ID: {log.entityId} • {log.timestamp.toDate().toLocaleString()}</p>
+                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                                                    ID: {log.entityId || '—'} • {log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString() : 'sin fecha'}
+                                                </p>
                                             </div>
                                         </div>
                                         <ArrowUpRight className="h-4 w-4 text-slate-300" />

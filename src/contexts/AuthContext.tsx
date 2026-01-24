@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(
     hasInvalidConfig ? 'La configuracion de Firebase es invalida. Revisa las variables de entorno.' : null
   );
-  const fallbackTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const buildUserProfile = (credUser: User, email: string): UserType => {
     const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email);
@@ -254,7 +254,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const normalizedEmail = email.trim();
       const cred = await createUserWithEmailAndPassword(auth, normalizedEmail, pass);
-      const isSuperAdmin = SUPER_ADMINS.includes(normalizedEmail);
+      const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(normalizedEmail);
 
       const newUser: UserType = {
         uid: cred.user.uid,
