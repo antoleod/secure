@@ -237,7 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError('El navegador no permite el popup. Usaremos redireccion.');
         break;
       default:
-        setError('Ocurrio un error al autenticar. Intenta de nuevo.');
+        setError(`Error (${firebaseError.code}): ${firebaseError.message}`);
     }
   };
 
