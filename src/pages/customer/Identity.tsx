@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { IDUpload } from '@/components/IDUpload';
-import { evaluateKyc, mockExtractFromFile, manualReviewOverride } from '@/lib/kycEngine';
+import { evaluateKyc, mockExtractFromFile } from '@/lib/kycEngine';
 
 export default function CustomerIdentity() {
   const { user, userData } = useAuth();

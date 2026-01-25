@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import {
   User,
   onAuthStateChanged,
@@ -13,6 +13,7 @@ import { doc, getDoc, setDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebas
 import { auth, db } from '../lib/firebase';
 import { googleSignInSmart } from '../lib/auth/googleSignInSmart';
 import { User as UserType } from '../types';
+import { SUPER_ADMIN_EMAILS } from './authConstants';
 
 export interface AuthContextType {
   user: User | null;
@@ -29,7 +30,6 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const SUPER_ADMIN_EMAILS = ['jdioses@outlook.be', 'antoleod@gmail.com'];
 const DEFAULT_ROLE: UserType['role'] = 'customer';
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const buildUserProfile = (credUser: User, email: string): UserType => {
+  const buildUserProfile = useCallback((credUser: User, email: string): UserType => {
     const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email);
 
     return {
@@ -65,9 +65,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       addressCityPostal: '',
       createdAt: Timestamp.now(),
     };
-  };
+  }, []);
 
-  const ensureUserProfile = async (credUser: User): Promise<UserType | null> => {
+  const ensureUserProfile = useCallback(async (credUser: User): Promise<UserType | null> => {
     const userEmail = credUser.email || '';
     const docRef = doc(db, 'users', credUser.uid);
     const docSnap = await getDoc(docRef);
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('setDoc failed, using fallback profile', err);
       return newUser;
     }
-  };
+  }, [buildUserProfile]);
 
   useEffect(() => {
     if (hasInvalidConfig) return;
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, [hasInvalidConfig]);
+  }, [buildUserProfile, ensureUserProfile, hasInvalidConfig]);
 
   useEffect(() => {
     if (hasInvalidConfig) return;
@@ -179,7 +179,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } catch (err) {
             console.error('Error ensuring user profile:', err);
             const email = nextUser.email || '';
-            const isSuperAdmin = SUPER_ADMIN_EMAILS.includes(email);
             setUserData(buildUserProfile(nextUser, email));
             setError('No pudimos cargar tu perfil. Continuamos con datos locales.');
           } finally {
@@ -201,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (unsubscribeUserData) unsubscribeUserData();
       if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
     };
-  }, [hasInvalidConfig]);
+  }, [buildUserProfile, ensureUserProfile, hasInvalidConfig]);
 
   const handleError = (err: unknown) => {
     const firebaseError = err as AuthError;

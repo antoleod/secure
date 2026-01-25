@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Camera, Upload as UploadIcon, FileText, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
@@ -16,7 +16,7 @@ export function IDUpload({ label, maxSizeMb = DEFAULT_MAX_MB, accept = 'image/*,
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<{ type: 'image' | 'pdf'; url: string; name: string } | null>(null);
 
-  const inputId = useMemo(() => `id-upload-${Math.random().toString(36).slice(2)}`, []);
+  const inputId = useId();
 
   const handleFile = (file: File | null) => {
     if (!file) {

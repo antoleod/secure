@@ -90,7 +90,7 @@ describe('Form persistence', () => {
     }));
     vi.doMock('@tanstack/react-query', () => ({
       useQuery: () => ({ data: [], isLoading: false }),
-      useMutation: (opts: any) => ({
+      useMutation: (opts: { mutationFn: () => unknown }) => ({
         mutate: () => opts.mutationFn(),
         isPending: false,
       }),

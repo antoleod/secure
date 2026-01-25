@@ -126,7 +126,7 @@ function normalizeDoc(v: string) {
   return v.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 }
 
-export function decideStatus(score: number, reasons: string[], extracted: KycExtracted): KYCStatus | 'fail' {
+export function decideStatus(score: number, reasons: string[]): KYCStatus | 'fail' {
   const hasDobMismatch = reasons.includes('dob_mismatch');
   if (hasDobMismatch || score < 60) return 'fail';
   if (score >= 85) return 'verified';
@@ -135,7 +135,7 @@ export function decideStatus(score: number, reasons: string[], extracted: KycExt
 
 export function evaluateKyc(form: KycFormData, extracted: KycExtracted, attemptsAuto = 1): KycDecision {
   const { score, reasons } = computeScore(form, extracted);
-  const status = decideStatus(score, reasons, extracted);
+  const status = decideStatus(score, reasons);
   return {
     status,
     score,
@@ -148,7 +148,9 @@ export function evaluateKyc(form: KycFormData, extracted: KycExtracted, attempts
 
 export function mockExtractFromFile(fileName: string, form: KycFormData): KycExtracted {
   const lower = fileName.toLowerCase();
-  const isMock = typeof globalThis !== 'undefined' && (globalThis as any)?.process?.env?.MOCK_OCR === 'true';
+  const isMock =
+    typeof globalThis !== 'undefined' &&
+    ((globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.MOCK_OCR === 'true');
   if (isMock) {
     return {
       fullName: form.fullName,
