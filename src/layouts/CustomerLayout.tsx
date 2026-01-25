@@ -29,6 +29,8 @@ export function CustomerLayout() {
     const location = useLocation();
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const safeAreaNav = { paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom, 0px))' };
+    const safeAreaHeader = { paddingTop: 'env(safe-area-inset-top, 0px)' };
 
     // Scroll progress line
     const { scrollYProgress } = useScroll();
@@ -80,13 +82,14 @@ export function CustomerLayout() {
 
             {/* ULTRA-MODERN HEADER */}
             <header
+                style={safeAreaHeader}
                 className={`sticky top-0 z-50 transition-all duration-500 ${isScrolled
                         ? 'bg-white/80 backdrop-blur-2xl py-3 shadow-[0_4px_30px_rgba(0,0,0,0.03)] border-b border-slate-200/50'
-                        : 'bg-transparent py-6 border-b border-transparent'
+                        : 'bg-transparent py-4 sm:py-6 border-b border-transparent'
                     }`}
             >
-                <div className="container mx-auto px-6 flex items-center justify-between">
-                    <div className="flex items-center gap-10">
+                <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between">
+                    <div className="flex items-center gap-4 sm:gap-8 lg:gap-10">
                         {/* Logo */}
                         <motion.div
                             whileHover={{ scale: 1.05 }}
@@ -185,7 +188,7 @@ export function CustomerLayout() {
                         exit={{ height: 0, opacity: 0 }}
                         className="md:hidden bg-white border-b border-slate-200 shadow-sm"
                     >
-                        <div className="px-6 py-4 space-y-3">
+                        <div className="px-4 sm:px-6 py-4 space-y-3">
                             {headerLinks.map((link) => {
                                 const active = isActive(link.to);
                                 return (
@@ -214,7 +217,7 @@ export function CustomerLayout() {
             </AnimatePresence>
 
             {/* ROUTE CONTENT WITH SPRING ANIMATIONS */}
-            <main className="flex-1 container mx-auto px-6 py-10 relative">
+            <main className="flex-1 container mx-auto px-4 sm:px-6 py-8 sm:py-10 relative">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={location.pathname}
@@ -229,7 +232,7 @@ export function CustomerLayout() {
             </main>
 
             <footer className="bg-slate-900 text-slate-100 mt-12">
-                <div className="container mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="container mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div className="space-y-2">
                         <p className="text-lg font-black tracking-tight flex items-center gap-2">
                             <img src={secureIcon} alt="Secure" className="w-8 h-8" loading="lazy" />
@@ -252,17 +255,17 @@ export function CustomerLayout() {
                         <p className="text-xs text-slate-400">Build: {import.meta.env.VITE_APP_VERSION || 'dev'}</p>
                     </div>
                 </div>
-                <div className="border-t border-slate-800 px-6 py-4 text-center text-xs text-slate-500">© {new Date().getFullYear()} Secure. Todos los derechos reservados.</div>
+                <div className="border-t border-slate-800 px-4 sm:px-6 py-4 text-center text-xs text-slate-500">© {new Date().getFullYear()} Secure. Todos los derechos reservados.</div>
             </footer>
 
             {/* FLOATING ACTION DOCK (IOS STYLE) */}
-            <nav className="fixed bottom-0 left-0 right-0 z-[100] px-6 pb-10 pointer-events-none">
+            <nav className="fixed bottom-0 left-0 right-0 z-[100] px-4 sm:px-6 pb-8 pointer-events-none" style={safeAreaNav}>
                 <div className="container mx-auto max-w-xl pointer-events-auto">
                     <motion.div
                         initial={{ y: 100, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.5, type: "spring", stiffness: 100 }}
-                        className="bg-slate-900/90 backdrop-blur-3xl border border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.4)] rounded-[3rem] p-2 flex items-center justify-around"
+                        className="bg-slate-900/90 backdrop-blur-3xl border border-white/10 shadow-[0_30px_100px_rgba(0,0,0,0.35)] rounded-[2.5rem] p-1 sm:p-2 flex items-center justify-around"
                     >
                         {footerLinks.map((link) => {
                             const active = isActive(link.to);
@@ -271,7 +274,7 @@ export function CustomerLayout() {
                                 <Link
                                     key={link.to}
                                     to={link.to}
-                                    className="relative flex flex-col items-center justify-center py-4 min-w-[5rem] group"
+                                    className="relative flex flex-col items-center justify-center py-3 sm:py-4 min-w-[4.25rem] sm:min-w-[5rem] group"
                                 >
                                     <motion.div
                                         animate={{

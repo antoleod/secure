@@ -2,12 +2,14 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-
+const basePath = process.env.VITE_BASE_PATH?.trim() || '/'
+const normalizedBase = basePath.endsWith('/') ? basePath : `${basePath}/`
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  // Allow overriding the base path for GitHub Pages/custom domains via VITE_BASE_PATH
+  base: normalizedBase,
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

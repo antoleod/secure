@@ -72,10 +72,10 @@ export default function CustomerDashboard() {
                     transition={{ duration: 0.5 }}
                 >
                     <p className="text-emerald-600 font-black uppercase tracking-[0.3em] text-[10px] mb-2">{greeting}</p>
-                    <h1 className="text-5xl font-black text-slate-900 tracking-tight leading-none">
+                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight leading-tight sm:leading-none">
                         {t('dashboard.hello', { name: userData?.fullName?.split(' ')[0] || '' })}
                     </h1>
-                    <p className="text-slate-500 mt-3 max-w-md text-lg">
+                    <p className="text-slate-500 mt-3 max-w-md text-base sm:text-lg">
                         {loansLoading ? <Skeleton className="h-4 w-full mt-2" /> : t('dashboard.welcomeText', { count: activeLoanCount })}
                     </p>
                 </motion.div>
@@ -86,7 +86,7 @@ export default function CustomerDashboard() {
                     transition={{ duration: 0.5, delay: 0.1 }}
                 >
                     <Link to="/app/collateral">
-                        <Button className="bg-slate-900 hover:bg-black text-white shadow-2xl shadow-slate-200 rounded-3xl px-8 py-8 h-auto group transition-all duration-500">
+                        <Button className="bg-slate-900 hover:bg-black text-white shadow-2xl shadow-slate-200 rounded-3xl px-6 sm:px-8 py-5 sm:py-8 h-auto group transition-all duration-500">
                             <Plus className="mr-3 h-6 w-6 group-hover:rotate-90 transition-transform duration-500" />
                             <div className="text-left">
                                 <span className="block text-[10px] font-black uppercase tracking-widest opacity-60">{t('collateral.add.subcta')}</span>
@@ -100,7 +100,7 @@ export default function CustomerDashboard() {
             {/* KRI CARDS SECTION */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Total debt card */}
-                <motion.div whileHover={{ y: -5 }} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-slate-100">
+                <motion.div whileHover={{ y: -5 }} className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-slate-100">
                     <div className="flex items-center justify-between mb-6">
                         <div className="w-12 h-12 bg-sky-50 rounded-2xl flex items-center justify-center text-emerald-600">
                             <Wallet className="h-6 w-6" />
@@ -108,13 +108,13 @@ export default function CustomerDashboard() {
                         <TrendingUp className="h-5 w-5 text-slate-200" />
                     </div>
                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('dashboard.totalDebt')}</p>
-                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter">
+                    <h3 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">
                         {loansLoading ? <Skeleton className="h-10 w-24" /> : `${(totalDebt / 100).toLocaleString('es-ES')}€`}
                     </h3>
                 </motion.div>
 
                 {/* Estimated Limit */}
-                <motion.div whileHover={{ y: -5 }} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-slate-100">
+                <motion.div whileHover={{ y: -5 }} className="bg-white p-6 sm:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm transition-all duration-500 hover:shadow-xl hover:shadow-slate-100">
                     <div className="flex items-center justify-between mb-6">
                         <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
                             <Gem className="h-6 w-6" />
@@ -122,13 +122,13 @@ export default function CustomerDashboard() {
                         <ArrowUpRight className="h-5 w-5 text-slate-200" />
                     </div>
                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('dashboard.estimatedLimit')}</p>
-                    <h3 className="text-4xl font-black text-slate-900 tracking-tighter">
+                    <h3 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">
                         {loyaltyLoading ? <Skeleton className="h-10 w-24" /> : `${(loyalty?.creditLimitCents ? loyalty.creditLimitCents / 100 : 2500).toLocaleString('es-ES')}€`}
                     </h3>
                 </motion.div>
 
                 {/* Status Secure */}
-                <motion.div whileHover={{ y: -5 }} className="bg-slate-950 p-8 rounded-[2.5rem] shadow-2xl shadow-emerald-200 relative overflow-hidden group">
+                <motion.div whileHover={{ y: -5 }} className="bg-slate-950 p-6 sm:p-8 rounded-[2.5rem] shadow-2xl shadow-emerald-200 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-emerald-500/20 transition-all duration-1000" />
                     <div className="flex items-center justify-between mb-6 relative z-10">
                         <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-300">
@@ -150,7 +150,7 @@ export default function CustomerDashboard() {
                 <div className="lg:col-span-2 space-y-6">
                     {/* Identity Status */}
                     <Link to="/app/verify-identity">
-                        <motion.div whileHover={{ scale: 1.02 }} className="bg-white p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group">
+                        <motion.div whileHover={{ scale: 1.02 }} className="bg-white p-5 sm:p-6 rounded-[2rem] border border-slate-100 flex items-center justify-between group">
                             <div className="flex items-center gap-4">
                                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${kyc?.status === 'verified' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
                                     <ShieldCheck className="h-6 w-6" />
@@ -168,7 +168,7 @@ export default function CustomerDashboard() {
 
                     {/* Help Support */}
                     <Link to="/app/help">
-                        <motion.div whileHover={{ scale: 1.02 }} className="bg-gradient-to-br from-[#0f3d5c] to-emerald-500 p-8 rounded-[2rem] text-white relative overflow-hidden group">
+                        <motion.div whileHover={{ scale: 1.02 }} className="bg-gradient-to-br from-[#0f3d5c] to-emerald-500 p-6 sm:p-8 rounded-[2rem] text-white relative overflow-hidden group">
                             <div className="relative z-10">
                                 <h4 className="text-xl font-black tracking-tight">{t('dashboard.help.title')}</h4>
                                 <p className="text-emerald-100 text-sm mt-1 mb-6 font-bold">{t('dashboard.help.subtitle')}</p>
@@ -189,7 +189,7 @@ export default function CustomerDashboard() {
 
                 {/* Right Column - Live Activity */}
                 <Card className="lg:col-span-5 border-none shadow-2xl shadow-slate-100 rounded-[3rem] overflow-hidden bg-white">
-                    <CardHeader className="bg-slate-50/50 p-10 flex flex-row items-center justify-between border-b border-slate-100">
+                    <CardHeader className="bg-slate-50/50 p-6 sm:p-10 flex flex-row items-center justify-between border-b border-slate-100">
                         <div>
                             <div className="flex items-center gap-2 text-emerald-600 mb-1">
                                 <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="w-2 h-2 bg-emerald-500 rounded-full" />
@@ -201,11 +201,11 @@ export default function CustomerDashboard() {
                     </CardHeader>
                     <CardContent className="p-0">
                         {requestsLoading ? (
-                            <div className="p-10 space-y-6">
+                            <div className="p-6 sm:p-10 space-y-6">
                                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full rounded-2xl" />)}
                             </div>
                         ) : requests?.length === 0 ? (
-                            <div className="p-20 text-center space-y-4">
+                            <div className="p-12 sm:p-20 text-center space-y-4">
                                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-200">
                                     <Clock className="h-8 w-8" />
                                 </div>
@@ -219,7 +219,7 @@ export default function CustomerDashboard() {
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: idx * 0.1 }}
                                         key={req.id}
-                                        className="p-8 hover:bg-slate-50/50 transition-colors flex items-center justify-between group cursor-pointer"
+                                        className="p-6 sm:p-8 hover:bg-slate-50/50 transition-colors flex items-center justify-between group cursor-pointer"
                                     >
                                         <div className="flex items-center gap-6">
                                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl transition-transform group-hover:scale-110 duration-500 shadow-sm ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
@@ -262,7 +262,7 @@ export default function CustomerDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="bg-gradient-to-br from-[#0f3d5c] via-[#0f2f43] to-[#0c1f2f] rounded-[3.5rem] p-12 md:p-20 relative overflow-hidden group"
+                className="bg-gradient-to-br from-[#0f3d5c] via-[#0f2f43] to-[#0c1f2f] rounded-[3.5rem] p-8 sm:p-12 md:p-20 relative overflow-hidden group"
             >
                 <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-emerald-300/20 to-transparent pointer-events-none" />
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center relative z-10">
@@ -271,12 +271,12 @@ export default function CustomerDashboard() {
                             <SparklesIcon className="h-5 w-5" />
                             <span>{t('dashboard.store.subtitle')}</span>
                         </div>
-                        <h2 className="text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.9]">{t('dashboard.store.title')}</h2>
-                        <p className="text-slate-400 mt-8 text-lg max-w-sm leading-relaxed">
+                        <h2 className="text-3xl sm:text-5xl md:text-7xl font-black text-white tracking-tighter leading-[0.95] sm:leading-[0.9]">{t('dashboard.store.title')}</h2>
+                        <p className="text-slate-400 mt-6 sm:mt-8 text-base sm:text-lg max-w-sm leading-relaxed">
                             Accede a dispositivos de última generación procedentes de liquidaciones con descuentos de hasta el 40%. Solo para miembros Secure.
                         </p>
                         <Link to="/app/store">
-                            <Button className="mt-12 bg-emerald-300 hover:bg-emerald-200 text-slate-900 px-10 py-8 h-auto rounded-[1.5rem] font-black uppercase tracking-widest text-xs shadow-2xl shadow-emerald-200/30 transition-all active:scale-95">
+                            <Button className="mt-8 sm:mt-12 bg-emerald-300 hover:bg-emerald-200 text-slate-900 px-8 sm:px-10 py-6 sm:py-8 h-auto rounded-[1.5rem] font-black uppercase tracking-widest text-xs shadow-2xl shadow-emerald-200/30 transition-all active:scale-95">
                                 {t('dashboard.store.cta')}
                             </Button>
                         </Link>

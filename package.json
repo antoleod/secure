@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "postbuild": "node scripts/verify-dist.js",
+    "postbuild": "node scripts/verify-dist.js && node scripts/create-404.js",
     "analyze:bundle": "npm run build && node scripts/bundle-report.js",
     "typecheck": "tsc -b",
     "lint": "eslint .",

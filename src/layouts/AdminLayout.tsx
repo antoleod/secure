@@ -22,6 +22,8 @@ export function AdminLayout() {
     const navigate = useNavigate();
     const location = useLocation();
     const [isScrolled, setIsScrolled] = useState(false);
+    const safeAreaNav = { paddingBottom: 'calc(2.25rem + env(safe-area-inset-bottom, 0px))' };
+    const safeAreaHeader = { paddingTop: 'env(safe-area-inset-top, 0px)' };
 
     const { scrollYProgress } = useScroll();
     const scaleX = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
@@ -61,9 +63,9 @@ export function AdminLayout() {
             <motion.div className="fixed top-0 left-0 right-0 h-1 bg-indigo-600 origin-left z-[100]" style={{ scaleX }} />
 
             {/* HIGH-TECH ADMIN HEADER */}
-            <header className={`sticky top-0 z-50 transition-all duration-500 border-b ${isScrolled ? 'bg-slate-900 shadow-2xl py-3 border-slate-800' : 'bg-slate-950 py-5 border-transparent'
+            <header style={safeAreaHeader} className={`sticky top-0 z-50 transition-all duration-500 border-b ${isScrolled ? 'bg-slate-900 shadow-2xl py-3 border-slate-800' : 'bg-slate-950 py-5 border-transparent'
                 }`}>
-                <div className="container mx-auto px-6 flex items-center justify-between">
+                <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between">
                     <div className="flex items-center gap-12">
                         <Link to="/admin" className="flex items-center gap-3 group">
                             <motion.div
@@ -130,7 +132,7 @@ export function AdminLayout() {
             </header>
 
             {/* MAIN PORTAL AREA */}
-            <main className="flex-1 container mx-auto px-6 py-12 relative">
+            <main className="flex-1 container mx-auto px-4 sm:px-6 py-10 sm:py-12 relative">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={location.pathname}
@@ -145,7 +147,7 @@ export function AdminLayout() {
             </main>
 
             {/* ADMIN BOTTOM DOCK */}
-            <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-12 pointer-events-none flex justify-center">
+            <nav className="fixed bottom-0 left-0 right-0 z-50 px-4 sm:px-6 pb-10 pointer-events-none flex justify-center" style={safeAreaNav}>
                 <div className="max-w-3xl w-full pointer-events-auto">
                     <motion.div
                         initial={{ y: 100 }}
