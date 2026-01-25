@@ -78,7 +78,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white font-sans selection:bg-emerald-100 selection:text-slate-900">
+    <div className="min-h-dvh grid grid-cols-1 lg:grid-cols-2 bg-white font-sans selection:bg-emerald-100 selection:text-slate-900">
 
       {/* Visual Side (Hidden on Mobile) */}
       <div className="hidden lg:flex relative bg-[#0d2434] overflow-hidden items-center justify-center p-20">
@@ -140,11 +140,11 @@ export default function Login() {
       </div>
 
       {/* Form Side */}
-      <div className="flex items-center justify-center p-8 md:p-16 lg:p-24 bg-[#fcfcfd]">
+      <div className="flex items-center justify-center px-4 sm:px-8 md:px-16 lg:px-24 py-8 sm:py-12 bg-[#fcfcfd]">
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          className="max-w-md w-full space-y-10"
+          className="max-w-md w-full space-y-8 sm:space-y-10"
         >
           <div className="text-center lg:text-left space-y-3">
             <div className="inline-flex lg:hidden items-center gap-2 mb-6">
