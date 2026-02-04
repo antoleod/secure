@@ -14,6 +14,8 @@ const firebaseConfig: Record<string, string | undefined> = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+const useEmulators = import.meta.env.VITE_USE_EMULATORS === 'true';
+
 const fallbackAuthDomain =
   firebaseConfig.projectId && `${firebaseConfig.projectId as string}.firebaseapp.com`;
 const hasTrustedAuthDomain =
@@ -28,19 +30,35 @@ if (!hasTrustedAuthDomain && fallbackAuthDomain) {
 }
 
 const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'] as const;
+const placeholderPattern = /(YOUR_|placeholder|XXXX|000000000000|example|demo)/i;
+const isPlaceholderValue = (value: string | undefined) => !value || placeholderPattern.test(value);
 const missingKeys = requiredKeys.filter((key) => !firebaseConfig[key]);
+const placeholderKeys = requiredKeys.filter((key) => isPlaceholderValue(firebaseConfig[key]));
 
+let firebaseConfigError: string | null = null;
 if (missingKeys.length > 0) {
-  throw new Error(`Falta configuración de Firebase: ${missingKeys.join(', ')}. Verifica tu archivo .env.local`);
+  firebaseConfigError = `Falta configuracion de Firebase: ${missingKeys.join(', ')}. Revisa tu archivo .env.local`;
+} else if (placeholderKeys.length > 0 && !useEmulators) {
+  firebaseConfigError = `Configuracion de Firebase invalida (placeholders): ${placeholderKeys.join(', ')}. Reemplaza los valores de .env.local`;
 }
 
-const app: FirebaseApp = initializeApp(firebaseConfig);
-const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
-const storage: FirebaseStorage = getStorage(app);
-const analytics: Promise<Analytics | null> = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let analytics: Promise<Analytics | null> = Promise.resolve(null);
 
-if (import.meta.env.VITE_USE_EMULATORS === 'true') {
+if (firebaseConfigError) {
+  console.error(firebaseConfigError);
+} else {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  storage = getStorage(app);
+  analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
+}
+
+if (useEmulators && auth && db && storage) {
   (async () => {
     console.warn('WARN: Usando Firebase Emulators');
     const { connectAuthEmulator } = await import('firebase/auth');
@@ -53,5 +71,5 @@ if (import.meta.env.VITE_USE_EMULATORS === 'true') {
   })();
 }
 
-export { app, auth, db, storage, analytics };
+export { app, auth, db, storage, analytics, firebaseConfigError };
 export const ENABLE_UPLOADS = import.meta.env.VITE_ENABLE_UPLOADS === 'true';

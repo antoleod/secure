@@ -10,7 +10,7 @@ import {
   AuthError,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import { auth, db } from '../lib/firebase';
+import { auth, db, firebaseConfigError } from '../lib/firebase';
 import { googleSignInSmart } from '../lib/auth/googleSignInSmart';
 import { User as UserType } from '../types';
 import { SUPER_ADMIN_EMAILS } from './authConstants';
@@ -42,12 +42,14 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const hasInvalidConfig = !auth || !db;
+  const hasInvalidConfig = Boolean(firebaseConfigError) || !auth || !db;
+  const invalidConfigMessage =
+    firebaseConfigError || 'La configuracion de Firebase es invalida. Revisa las variables de entorno.';
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(!hasInvalidConfig);
   const [error, setError] = useState<string | null>(
-    hasInvalidConfig ? 'La configuracion de Firebase es invalida. Revisa las variables de entorno.' : null
+    hasInvalidConfig ? invalidConfigMessage : null
   );
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -68,6 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const ensureUserProfile = useCallback(async (credUser: User): Promise<UserType | null> => {
+    if (!db) return null;
     const userEmail = credUser.email || '';
     const docRef = doc(db, 'users', credUser.uid);
     const docSnap = await getDoc(docRef);
@@ -87,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [buildUserProfile]);
 
   useEffect(() => {
-    if (hasInvalidConfig) return;
+    if (hasInvalidConfig || !auth) return;
 
     let isMounted = true;
 
@@ -111,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [buildUserProfile, ensureUserProfile, hasInvalidConfig]);
 
   useEffect(() => {
-    if (hasInvalidConfig) return;
+    if (hasInvalidConfig || !auth || !db) return;
 
     let unsubscribeUserData: Unsubscribe | null = null;
 
@@ -242,6 +245,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInEmail = async (email: string, pass: string) => {
+    if (hasInvalidConfig || !auth || !db) {
+      setError(invalidConfigMessage);
+      throw new Error(invalidConfigMessage);
+    }
     setError(null);
     setLoading(true);
     try {
@@ -256,6 +263,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUpEmail = async (email: string, pass: string, fullName: string, phone: string) => {
+    if (hasInvalidConfig || !auth || !db) {
+      setError(invalidConfigMessage);
+      throw new Error(invalidConfigMessage);
+    }
     setError(null);
     setLoading(true);
     try {
@@ -285,6 +296,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInGoogle = async () => {
+    if (hasInvalidConfig || !auth || !db) {
+      setError(invalidConfigMessage);
+      throw new Error(invalidConfigMessage);
+    }
     setLoading(true);
     try {
       await googleSignInSmart({
@@ -304,6 +319,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
+    if (hasInvalidConfig || !auth) {
+      setError(invalidConfigMessage);
+      throw new Error(invalidConfigMessage);
+    }
     setError(null);
     try {
       const trimmed = email.trim();

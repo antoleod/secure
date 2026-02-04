@@ -18,7 +18,10 @@ export default function CustomerLoans() {
 
     useEffect(() => {
         async function loadLoans() {
-            if (!user) return;
+            if (!user || !db) {
+                setLoading(false);
+                return;
+            }
             try {
                 const q = query(collection(db, 'loans'), where('customerUid', '==', user.uid));
                 const querySnapshot = await getDocs(q);
