@@ -35,30 +35,24 @@ const isPlaceholderValue = (value: string | undefined) => !value || placeholderP
 const missingKeys = requiredKeys.filter((key) => !firebaseConfig[key]);
 const placeholderKeys = requiredKeys.filter((key) => isPlaceholderValue(firebaseConfig[key]));
 
-let firebaseConfigError: string | null = null;
 if (missingKeys.length > 0) {
-  firebaseConfigError = `Falta configuracion de Firebase: ${missingKeys.join(', ')}. Revisa tu archivo .env.local`;
-} else if (placeholderKeys.length > 0 && !useEmulators) {
-  firebaseConfigError = `Configuracion de Firebase invalida (placeholders): ${placeholderKeys.join(', ')}. Reemplaza los valores de .env.local`;
+  throw new Error(
+    `Falta configuracion de Firebase: ${missingKeys.join(', ')}. Revisa tu archivo .env.local`
+  );
+}
+if (placeholderKeys.length > 0 && !useEmulators) {
+  throw new Error(
+    `Configuracion de Firebase invalida (placeholders): ${placeholderKeys.join(', ')}. Reemplaza los valores de .env.local`
+  );
 }
 
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let db: Firestore | null = null;
-let storage: FirebaseStorage | null = null;
-let analytics: Promise<Analytics | null> = Promise.resolve(null);
+const app: FirebaseApp = initializeApp(firebaseConfig);
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
+const storage: FirebaseStorage = getStorage(app);
+const analytics: Promise<Analytics | null> = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
 
-if (firebaseConfigError) {
-  console.error(firebaseConfigError);
-} else {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
-  db = getFirestore(app);
-  storage = getStorage(app);
-  analytics = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
-}
-
-if (useEmulators && auth && db && storage) {
+if (useEmulators) {
   (async () => {
     console.warn('WARN: Usando Firebase Emulators');
     const { connectAuthEmulator } = await import('firebase/auth');
@@ -71,5 +65,5 @@ if (useEmulators && auth && db && storage) {
   })();
 }
 
-export { app, auth, db, storage, analytics, firebaseConfigError };
+export { app, auth, db, storage, analytics };
 export const ENABLE_UPLOADS = import.meta.env.VITE_ENABLE_UPLOADS === 'true';

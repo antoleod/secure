@@ -10,7 +10,7 @@ import {
   AuthError,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import { auth, db, firebaseConfigError } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { googleSignInSmart } from '../lib/auth/googleSignInSmart';
 import { User as UserType } from '../types';
 import { SUPER_ADMIN_EMAILS } from './authConstants';
@@ -42,14 +42,12 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const hasInvalidConfig = Boolean(firebaseConfigError) || !auth || !db;
-  const invalidConfigMessage =
-    firebaseConfigError || 'La configuracion de Firebase es invalida. Revisa las variables de entorno.';
+  const hasInvalidConfig = !auth || !db;
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(!hasInvalidConfig);
   const [error, setError] = useState<string | null>(
-    hasInvalidConfig ? invalidConfigMessage : null
+    hasInvalidConfig ? 'La configuracion de Firebase es invalida. Revisa las variables de entorno.' : null
   );
   const fallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -246,8 +244,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInEmail = async (email: string, pass: string) => {
     if (hasInvalidConfig || !auth || !db) {
-      setError(invalidConfigMessage);
-      throw new Error(invalidConfigMessage);
+      const message = 'La configuracion de Firebase es invalida. Revisa las variables de entorno.';
+      setError(message);
+      throw new Error(message);
     }
     setError(null);
     setLoading(true);
@@ -264,8 +263,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUpEmail = async (email: string, pass: string, fullName: string, phone: string) => {
     if (hasInvalidConfig || !auth || !db) {
-      setError(invalidConfigMessage);
-      throw new Error(invalidConfigMessage);
+      const message = 'La configuracion de Firebase es invalida. Revisa las variables de entorno.';
+      setError(message);
+      throw new Error(message);
     }
     setError(null);
     setLoading(true);
@@ -297,8 +297,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInGoogle = async () => {
     if (hasInvalidConfig || !auth || !db) {
-      setError(invalidConfigMessage);
-      throw new Error(invalidConfigMessage);
+      const message = 'La configuracion de Firebase es invalida. Revisa las variables de entorno.';
+      setError(message);
+      throw new Error(message);
     }
     setLoading(true);
     try {
@@ -320,8 +321,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const resetPassword = async (email: string) => {
     if (hasInvalidConfig || !auth) {
-      setError(invalidConfigMessage);
-      throw new Error(invalidConfigMessage);
+      const message = 'La configuracion de Firebase es invalida. Revisa las variables de entorno.';
+      setError(message);
+      throw new Error(message);
     }
     setError(null);
     try {
