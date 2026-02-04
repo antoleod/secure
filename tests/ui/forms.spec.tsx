@@ -101,6 +101,12 @@ describe('Form persistence', () => {
       registerCollateralWithRefs: vi.fn(),
       uploadFile: vi.fn(),
     }));
+    vi.doMock('@/lib/firebase', () => ({
+      auth: {},
+      db: {},
+      storage: {},
+      ENABLE_UPLOADS: false,
+    }));
 
     const { default: CustomerCollateral } = await import('@/pages/customer/Collateral');
 
