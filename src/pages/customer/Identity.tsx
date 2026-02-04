@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchKyc, saveKycDecision, saveKycDocument, updateProfile, requestManualReview, uploadFile } from '@/lib/firestoreClient';
+import { fetchKyc, saveKycDecision, saveKycDocument, updateProfile, requestManualReview, uploadFile, sanitizeFileName } from '@/lib/firestoreClient';
 import { useI18n } from '@/contexts/I18nContext';
 import {
   Loader2,
@@ -66,7 +66,7 @@ export default function CustomerIdentity() {
       setUploading(true);
       try {
         const ext = docFile.name.split('.').pop() || 'bin';
-        const path = `kyc/${user.uid}/id/${Date.now()}.${ext}`;
+        const path = `users/${user.uid}/kyc/${Date.now()}-${sanitizeFileName(docFile.name || `id.${ext}`)}`;
         const stored = await uploadFile(path, docFile);
         if (!stored) throw new Error('Upload failed');
 

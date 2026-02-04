@@ -16,7 +16,7 @@ import {
     writeBatch,
 } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { db, storage, ENABLE_UPLOADS } from './firebase';
+import { auth, db, storage, ENABLE_UPLOADS } from './firebase';
 import {
     auditLogConverter,
     collateralConverter,
@@ -45,13 +45,227 @@ import {
 import { KycDecision } from './kycEngine';
 // import { calculateMonthlyPayment, calculateTotalRepayment } from './finance'; // Commented out as finance logic might need update, doing simple calc for now or ignoring
 
-export async function uploadFile(path: string, file?: File) {
-    if (!ENABLE_UPLOADS || !file) return null;
-    const storageRef = ref(storage, path);
-    const uploaded = await uploadBytes(storageRef, file);
-    return getDownloadURL(uploaded.ref);
+type UploadErrorCode =
+    | 'UPLOADS_DISABLED'
+    | 'AUTH_MISSING'
+    | 'INVALID_FILE_TYPE'
+    | 'FILE_TOO_LARGE'
+    | 'STORAGE_UPLOAD_FAIL'
+    | 'FIRESTORE_SAVE_FAIL'
+    | 'NO_FILES';
+
+export type UploadSelfCheckResult = {
+    envEnabled: boolean;
+    authUid: string | null;
+    hasStorageBucket: boolean;
+    storageBucket?: string;
+    storageRefOk: boolean;
+    storageRefPath?: string;
+    storageRefError?: string;
+    ok: boolean;
+};
+
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const ALLOWED_UPLOAD_PREFIXES = ['image/'];
+const ALLOWED_UPLOAD_TYPES = ['application/pdf'];
+
+const isAllowedUploadType = (mime: string) =>
+    ALLOWED_UPLOAD_PREFIXES.some((prefix) => mime.startsWith(prefix)) || ALLOWED_UPLOAD_TYPES.includes(mime);
+
+const makeUploadError = (code: UploadErrorCode, message: string, cause?: unknown) => {
+    const error = new Error(message);
+    (error as Error & { code?: UploadErrorCode }).code = code;
+    if (cause) {
+        (error as Error & { cause?: unknown }).cause = cause;
+    }
+    return error;
+};
+
+export const sanitizeFileName = (name: string) => {
+    const base = name.split('/').pop()?.split('\\').pop() ?? 'file';
+    const normalized = base.normalize('NFKD').replace(/[^\x00-\x7F]/g, '');
+    const safe = normalized
+        .replace(/\s+/g, '-')
+        .replace(/[^a-zA-Z0-9._-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^[-.]+|[-.]+$/g, '');
+    return safe || 'file';
+};
+
+export const buildGarmentUploadPath = (options: { uid: string; garmentId: string; fileName: string }) => {
+    const safeFileName = sanitizeFileName(options.fileName);
+    return `users/${options.uid}/garments/${options.garmentId}/${safeFileName}`;
+};
+
+export function selfCheckUploads(uid?: string | null, garmentId = 'diagnostic'): UploadSelfCheckResult {
+    const resolvedUid = uid ?? auth.currentUser?.uid ?? null;
+    const storageBucket = storage.app.options.storageBucket;
+    const hasStorageBucket = Boolean(storageBucket);
+    let storageRefOk = false;
+    let storageRefPath: string | undefined;
+    let storageRefError: string | undefined;
+
+    if (resolvedUid && hasStorageBucket) {
+        try {
+            storageRefPath = buildGarmentUploadPath({
+                uid: resolvedUid,
+                garmentId,
+                fileName: 'probe.txt',
+            });
+            ref(storage, storageRefPath);
+            storageRefOk = true;
+        } catch (err) {
+            storageRefError = (err as Error).message;
+        }
+    }
+
+    const result: UploadSelfCheckResult = {
+        envEnabled: ENABLE_UPLOADS,
+        authUid: resolvedUid,
+        hasStorageBucket,
+        storageBucket: storageBucket || undefined,
+        storageRefOk,
+        storageRefPath,
+        storageRefError,
+        ok: ENABLE_UPLOADS && !!resolvedUid && hasStorageBucket && storageRefOk,
+    };
+
+    console.table(result);
+    return result;
 }
 
+export async function uploadFile(path: string, file?: File) {
+    if (!ENABLE_UPLOADS) {
+        console.warn('UPLOADS_DISABLED', { path });
+        return null;
+    }
+    if (!file) return null;
+    if (!isAllowedUploadType(file.type)) {
+        throw makeUploadError('INVALID_FILE_TYPE', 'Tipo de archivo no permitido.');
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+        throw makeUploadError('FILE_TOO_LARGE', 'El archivo supera el tamaño máximo permitido.');
+    }
+    try {
+        const storageRef = ref(storage, path);
+        const uploaded = await uploadBytes(storageRef, file);
+        return getDownloadURL(uploaded.ref);
+    } catch (err) {
+        console.error('STORAGE_UPLOAD_FAIL', { path, err });
+        throw makeUploadError('STORAGE_UPLOAD_FAIL', 'No pudimos subir el archivo.');
+    }
+}
+
+export async function saveCollateralWithUploads(options: {
+    ownerUid: string;
+    payload: Omit<Collateral, 'id' | 'ownerUid' | 'status' | 'createdAt' | 'updatedAt' | 'photosRefs'> & {
+        photosRefs?: string[];
+    };
+    photos?: File[];
+    statusOnSuccess?: Collateral['status'];
+}) {
+    if (!options.ownerUid) {
+        console.error('AUTH_MISSING', { reason: 'missing_uid' });
+        throw makeUploadError('AUTH_MISSING', 'Debes iniciar sesión para continuar.');
+    }
+
+    const collRef = collection(db, 'collaterals').withConverter(collateralConverter);
+    const docRef = doc(collRef);
+    const now = Timestamp.now();
+
+    try {
+        await setDoc(docRef, {
+            ...options.payload,
+            ownerUid: options.ownerUid,
+            photosRefs: [],
+            status: 'draft',
+            createdAt: now,
+            updatedAt: now,
+        } as Collateral);
+    } catch (err) {
+        console.error('FIRESTORE_SAVE_FAIL', { stage: 'draft', err });
+        throw makeUploadError('FIRESTORE_SAVE_FAIL', 'No pudimos guardar la prenda (borrador).', err);
+    }
+
+    if (!ENABLE_UPLOADS) {
+        console.warn('UPLOADS_DISABLED', { uid: options.ownerUid, collateralId: docRef.id });
+        try {
+            await updateDoc(docRef, {
+                status: 'needs_upload',
+                uploadErrorCode: 'UPLOADS_DISABLED',
+                uploadErrorMessage: 'Uploads disabled by environment.',
+                uploadUpdatedAt: now,
+                updatedAt: now,
+            });
+        } catch (err) {
+            console.error('FIRESTORE_SAVE_FAIL', { stage: 'needs_upload', err });
+        }
+        return { id: docRef.id, photosRefs: [] };
+    }
+
+    const photos = options.photos ?? [];
+    if (photos.length === 0) {
+        try {
+            await updateDoc(docRef, {
+                status: 'needs_upload',
+                uploadErrorCode: 'NO_FILES',
+                uploadErrorMessage: 'No files provided.',
+                uploadUpdatedAt: now,
+                updatedAt: now,
+            });
+        } catch (err) {
+            console.error('FIRESTORE_SAVE_FAIL', { stage: 'needs_upload', err });
+        }
+        throw makeUploadError('NO_FILES', 'Agrega al menos una foto para continuar.');
+    }
+
+    let photosRefs: string[] = [];
+    try {
+        const uploads = photos.map((photo, idx) =>
+            uploadFile(
+                buildGarmentUploadPath({
+                    uid: options.ownerUid,
+                    garmentId: docRef.id,
+                    fileName: photo.name || `photo-${idx + 1}`,
+                }),
+                photo
+            )
+        );
+        const uploaded = await Promise.all(uploads);
+        uploaded.filter(Boolean).forEach((url) => photosRefs.push(url as string));
+    } catch (err) {
+        console.error('STORAGE_UPLOAD_FAIL', { uid: options.ownerUid, collateralId: docRef.id, err });
+        try {
+            await updateDoc(docRef, {
+                status: 'needs_upload',
+                uploadErrorCode: (err as Error & { code?: UploadErrorCode }).code ?? 'STORAGE_UPLOAD_FAIL',
+                uploadErrorMessage: err instanceof Error ? err.message : 'Upload failed',
+                uploadUpdatedAt: Timestamp.now(),
+                updatedAt: Timestamp.now(),
+            });
+        } catch (updateErr) {
+            console.error('FIRESTORE_SAVE_FAIL', { stage: 'needs_upload', err: updateErr });
+        }
+        throw err;
+    }
+
+    try {
+        await updateDoc(docRef, {
+            photosRefs,
+            status: options.statusOnSuccess ?? 'submitted',
+            uploadErrorCode: null,
+            uploadErrorMessage: null,
+            uploadUpdatedAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+        });
+    } catch (err) {
+        console.error('FIRESTORE_SAVE_FAIL', { stage: 'finalize', err });
+        throw makeUploadError('FIRESTORE_SAVE_FAIL', 'No pudimos finalizar el registro de la prenda.', err);
+    }
+
+    const snap = await getDoc(docRef.withConverter(collateralConverter));
+    return snap.data() as Collateral;
+}
 export async function submitKyc(uid: string, payload: { frontIdRef: string; backIdRef: string; selfieRef?: string }) {
     const ref = doc(db, 'kyc', uid).withConverter(kycConverter);
     const record: KYC = {
@@ -408,7 +622,7 @@ export async function submitPayment(
     }
 ) {
     const proofFileRef = await uploadFile(
-        `payment-proof/${input.loanId}/${Date.now()}-${input.proofFile?.name ?? 'evidence'}`,
+        `users/${customerUid}/payments/${input.loanId}/${Date.now()}-${sanitizeFileName(input.proofFile?.name ?? 'evidence')}`,
         input.proofFile
     );
 

@@ -98,8 +98,14 @@ describe('Form persistence', () => {
     }));
     vi.doMock('@/lib/firestoreClient', () => ({
       listCollaterals: () => [],
-      registerCollateralWithRefs: vi.fn(),
-      uploadFile: vi.fn(),
+      saveCollateralWithUploads: vi.fn(),
+      selfCheckUploads: () => ({
+        envEnabled: false,
+        authUid: '123',
+        hasStorageBucket: true,
+        storageRefOk: true,
+        ok: false,
+      }),
     }));
     vi.doMock('@/lib/firebase', () => ({
       auth: {},

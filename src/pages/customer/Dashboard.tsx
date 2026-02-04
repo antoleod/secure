@@ -123,7 +123,7 @@ export default function CustomerDashboard() {
                     </div>
                     <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('dashboard.estimatedLimit')}</p>
                     <h3 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tighter">
-                        {loyaltyLoading ? <Skeleton className="h-10 w-24" /> : `${(loyalty?.creditLimitCents ? loyalty.creditLimitCents / 100 : 2500).toLocaleString('es-ES')}€`}
+                        {loyaltyLoading ? <Skeleton className="h-10 w-24" /> : `${(loyalty?.creditLimitCents ? loyalty.creditLimitCents / 100 : 50).toLocaleString('es-ES')}€`}
                     </h3>
                 </motion.div>
 

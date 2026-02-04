@@ -1,8 +1,8 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { listCollaterals, registerCollateralWithRefs, uploadFile } from '@/lib/firestoreClient';
+import { listCollaterals, saveCollateralWithUploads, selfCheckUploads, type UploadSelfCheckResult } from '@/lib/firestoreClient';
 import { ENABLE_UPLOADS } from '@/lib/firebase';
 import { useI18n } from '@/contexts/I18nContext';
 import { Collateral, CollateralType } from '@/types';
@@ -48,11 +48,14 @@ export default function CustomerCollateral() {
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [uploadDiag, setUploadDiag] = useState<UploadSelfCheckResult | null>(null);
     const summaryRef = useRef<HTMLDivElement | null>(null);
     const brandRef = useRef<HTMLInputElement | null>(null);
     const serialRef = useRef<HTMLInputElement | null>(null);
     const conditionRef = useRef<HTMLInputElement | null>(null);
     const valueRef = useRef<HTMLInputElement | null>(null);
+    const authMissing = !user?.uid;
+    const uploadsAllowed = ENABLE_UPLOADS && !authMissing && (uploadDiag?.hasStorageBucket ?? true);
     const missingRequired = useMemo(
         () =>
             !form.brandModel.trim() ||
@@ -60,8 +63,9 @@ export default function CustomerCollateral() {
             !form.condition.trim() ||
             !form.estimatedValue ||
             form.estimatedValue <= 0 ||
-            (ENABLE_UPLOADS && photos.length === 0),
-        [form.brandModel, form.serialImei, form.condition, form.estimatedValue, photos.length]
+            (uploadsAllowed && photos.length === 0) ||
+            authMissing,
+        [form.brandModel, form.serialImei, form.condition, form.estimatedValue, photos.length, uploadsAllowed, authMissing]
     );
 
     const { data: items, isLoading } = useQuery({
@@ -75,11 +79,12 @@ export default function CustomerCollateral() {
 
     const validateForm = () => {
         const nextErrors: Record<string, string> = {};
+        if (authMissing) nextErrors.auth = 'Debes iniciar sesión para subir documentos.';
         if (!form.brandModel.trim()) nextErrors.brandModel = 'Agrega marca/modelo (Ej: MacBook Pro 14)';
         if (!form.serialImei.trim()) nextErrors.serialImei = 'Agrega IMEI/Serie (Ej: SN123456789)';
         if (!form.condition.trim()) nextErrors.condition = 'Describe la condición (Ej: Como nuevo)';
         if (!form.estimatedValue || form.estimatedValue <= 0) nextErrors.estimatedValue = 'Ingresa un valor estimado mayor a 0 (Ej: 1200)';
-        if (photos.length === 0 && ENABLE_UPLOADS) nextErrors.photos = 'Agrega al menos 1 foto para continuar';
+        if (photos.length === 0 && uploadsAllowed) nextErrors.photos = 'Agrega al menos 1 foto para continuar';
 
         setFieldErrors(nextErrors);
         if (Object.keys(nextErrors).length) {
@@ -93,9 +98,40 @@ export default function CustomerCollateral() {
         return true;
     };
 
+    useEffect(() => {
+        const result = selfCheckUploads(user?.uid ?? null);
+        setUploadDiag(result);
+    }, [user?.uid]);
+
+    const resolveErrorMessage = (err: unknown) => {
+        const code = (err as Error & { code?: string }).code;
+        switch (code) {
+            case 'UPLOADS_DISABLED':
+                return 'Las cargas están deshabilitadas. Activa VITE_ENABLE_UPLOADS=true y revisa Firebase Storage.';
+            case 'AUTH_MISSING':
+                return 'Debes iniciar sesión para subir documentos.';
+            case 'INVALID_FILE_TYPE':
+                return 'Solo se aceptan imágenes o PDFs. Revisa el archivo e inténtalo de nuevo.';
+            case 'FILE_TOO_LARGE':
+                return 'El archivo supera 8MB. Reduce su tamaño e inténtalo de nuevo.';
+            case 'STORAGE_UPLOAD_FAIL':
+                return 'No pudimos subir las fotos. Verifica reglas, bucket y permisos.';
+            case 'FIRESTORE_SAVE_FAIL':
+                return 'No pudimos guardar la prenda. Verifica conexión y permisos de Firestore.';
+            case 'NO_FILES':
+                return 'Agrega al menos una foto para continuar.';
+            default:
+                return 'No pudimos guardar la prenda. Verifica tu conexión y permisos.';
+        }
+    };
+
     const mutation = useMutation({
         mutationFn: async () => {
-            if (!user) return;
+            if (!user?.uid) {
+                console.error('AUTH_MISSING', { reason: 'user_not_logged' });
+                setLocalError('Debes iniciar sesión para subir documentos.');
+                throw new Error('AUTH_MISSING');
+            }
             setErrorMsg(null);
             setLocalError(null);
             const isValid = validateForm();
@@ -105,30 +141,23 @@ export default function CustomerCollateral() {
             }
             setLoading(true);
             try {
-                const photosRefs: string[] = [];
-
-                if (ENABLE_UPLOADS && photos.length > 0) {
-                    const timestamp = Date.now();
-                    const uploads = photos.map((photo, idx) =>
-                        uploadFile(`collaterals/${user.uid}/${timestamp}-${idx}-${photo.name}`, photo)
-                    );
-                    const uploaded = await Promise.all(uploads);
-                    uploaded.filter(Boolean).forEach((url) => photosRefs.push(url as string));
-                }
-
                 const newCollateral: Omit<Collateral, 'id' | 'ownerUid' | 'status' | 'createdAt' | 'updatedAt'> = {
                     ...form,
-                    photosRefs,
                     estimatedValue: form.estimatedValue * 100, // Convert to cents
                     checklist: { functional: true, screenIntact: true, noWaterDamage: true },
                     declarations: { isOwner: true, noLiens: true }
                 };
 
-                await registerCollateralWithRefs(user.uid, newCollateral);
+                await saveCollateralWithUploads({
+                    ownerUid: user.uid,
+                    payload: newCollateral,
+                    photos,
+                    statusOnSuccess: 'submitted',
+                });
             } catch (err) {
                 console.error(err);
-                setErrorMsg('No pudimos guardar la prenda. Verifica tu conexión y los permisos de almacenamiento.');
-                throw err;
+                setErrorMsg(resolveErrorMessage(err));
+                throw err as Error;
             } finally {
                 setLoading(false);
             }
@@ -202,6 +231,16 @@ export default function CustomerCollateral() {
                                 <p className="text-slate-400 font-medium mb-10">{t('collateral.form.subtitle')}</p>
 
                                 <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }}>
+                                    {authMissing && (
+                                        <div className="rounded-2xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-semibold px-4 py-3">
+                                            Debes iniciar sesión para subir documentos.
+                                        </div>
+                                    )}
+                                    {(ENABLE_UPLOADS && uploadDiag?.hasStorageBucket === false) && (
+                                        <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 text-sm font-semibold px-4 py-3">
+                                            Storage no está configurado. Revisa <code className="font-mono text-xs">VITE_FIREBASE_STORAGE_BUCKET</code> y habilita Firebase Storage en la consola.
+                                        </div>
+                                    )}
                                     {(!ENABLE_UPLOADS) && (
                                         <div className="rounded-2xl border border-amber-200 bg-amber-50 text-amber-800 text-sm font-semibold px-4 py-3">
                                             Subida de fotos deshabilitada. Activa <code className="font-mono text-xs">VITE_ENABLE_UPLOADS=true</code> y configura Firebase Storage para adjuntar imágenes.
@@ -324,10 +363,19 @@ export default function CustomerCollateral() {
                                         </div>
                                     ))}
                                     {photos.length < 6 && (
-                                        <label className="aspect-square bg-white border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-emerald-400 group transition-all">
-                                            <Camera className="h-8 w-8 text-slate-300 group-hover:text-emerald-500 transition-transform group-hover:scale-110" />
+                                        <label
+                                            className={`aspect-square bg-white border-2 border-dashed rounded-3xl flex flex-col items-center justify-center gap-2 transition-all ${uploadsAllowed ? 'border-slate-200 cursor-pointer hover:border-emerald-400 group' : 'border-slate-100 opacity-60 cursor-not-allowed'}`}
+                                        >
+                                            <Camera className={`h-8 w-8 ${uploadsAllowed ? 'text-slate-300 group-hover:text-emerald-500 transition-transform group-hover:scale-110' : 'text-slate-300'}`} />
                                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{t('collateral.form.addPhoto')}</span>
-                                            <input type="file" className="hidden" accept="image/*" multiple onChange={e => e.target.files && setPhotos([...photos, ...Array.from(e.target.files)])} />
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                multiple
+                                                disabled={!uploadsAllowed}
+                                                onChange={e => e.target.files && setPhotos([...photos, ...Array.from(e.target.files)])}
+                                            />
                                         </label>
                                     )}
                                 </div>

@@ -73,7 +73,7 @@ export interface KYC {
 
 // Collateral types
 export type CollateralType = 'vehicle' | 'property' | 'jewelry' | 'electronics' | 'other';
-export type CollateralStatus = 'pending' | 'approved' | 'rejected' | 'in_stock' | 'sold';
+export type CollateralStatus = 'draft' | 'submitted' | 'needs_upload' | 'pending' | 'approved' | 'rejected' | 'in_stock' | 'sold';
 
 export interface Collateral {
     id?: string;
@@ -88,6 +88,9 @@ export interface Collateral {
     status: CollateralStatus;
     photosRefs: string[];
     videoRef?: string;
+    uploadErrorCode?: string | null;
+    uploadErrorMessage?: string | null;
+    uploadUpdatedAt?: Timestamp;
     appraisalValue?: number;
     appraisedBy?: string;
     appraisedAt?: Timestamp;

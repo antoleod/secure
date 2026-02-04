@@ -66,4 +66,4 @@ if (useEmulators) {
 }
 
 export { app, auth, db, storage, analytics };
-export const ENABLE_UPLOADS = import.meta.env.VITE_ENABLE_UPLOADS === 'true';
+export const ENABLE_UPLOADS = String(import.meta.env.VITE_ENABLE_UPLOADS).toLowerCase().trim() === 'true';
