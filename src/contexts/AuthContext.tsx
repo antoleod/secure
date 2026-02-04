@@ -237,6 +237,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       case 'auth/operation-not-supported-in-this-environment':
         setError('El navegador no permite el popup. Usaremos redireccion.');
         break;
+      case 'auth/api-key-not-valid.-please-pass-a-valid-api-key.':
+      case 'auth/invalid-api-key':
+        setError('Configuración inválida: API Key incorrecta. Revisa .env');
+        break;
       default:
         setError(`Error (${firebaseError.code}): ${firebaseError.message}`);
     }

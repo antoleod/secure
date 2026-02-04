@@ -1,8 +1,8 @@
 import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
 import { getAnalytics, isSupported, Analytics } from 'firebase/analytics';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig: Record<string, string | undefined> = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,7 +14,8 @@ const firebaseConfig: Record<string, string | undefined> = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-const useEmulators = import.meta.env.VITE_USE_EMULATORS === 'true';
+// En producción, forzamos a que NO se usen emuladores, incluso si la variable de entorno quedó activa.
+const useEmulators = import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === 'true';
 
 const fallbackAuthDomain =
   firebaseConfig.projectId && `${firebaseConfig.projectId as string}.firebaseapp.com`;
@@ -50,19 +51,18 @@ const app: FirebaseApp = initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 const storage: FirebaseStorage = getStorage(app);
-const analytics: Promise<Analytics | null> = isSupported().then((yes) => (yes ? getAnalytics(app) : null));
+
+// Prevent analytics from crashing with placeholders or emulators
+const analytics: Promise<Analytics | null> = isSupported().then((yes) =>
+  yes && !useEmulators && placeholderKeys.length === 0 ? getAnalytics(app) : null
+);
 
 if (useEmulators) {
-  (async () => {
-    console.warn('WARN: Usando Firebase Emulators');
-    const { connectAuthEmulator } = await import('firebase/auth');
-    const { connectFirestoreEmulator } = await import('firebase/firestore');
-    const { connectStorageEmulator } = await import('firebase/storage');
-
-    connectAuthEmulator(auth, 'http://localhost:9099');
-    connectFirestoreEmulator(db, 'localhost', 8080);
-    connectStorageEmulator(storage, 'localhost', 9199);
-  })();
+  console.warn('WARN: Usando Firebase Emulators');
+  // Connect synchronously to avoid race conditions with auth calls
+  connectAuthEmulator(auth, 'http://localhost:9099');
+  connectFirestoreEmulator(db, 'localhost', 8080);
+  connectStorageEmulator(storage, 'localhost', 9199);
 }
 
 export { app, auth, db, storage, analytics };
