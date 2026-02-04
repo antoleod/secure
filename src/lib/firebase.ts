@@ -43,7 +43,7 @@ if (missingKeys.length > 0) {
 }
 if (placeholderKeys.length > 0 && !useEmulators) {
   throw new Error(
-    `Configuracion de Firebase invalida (placeholders): ${placeholderKeys.join(', ')}. Reemplaza los valores de .env.local`
+    `Configuracion de Firebase invalida (placeholders): ${placeholderKeys.join(', ')}. Verifica .env y EJECUTA 'npm run build'`
   );
 }
 
