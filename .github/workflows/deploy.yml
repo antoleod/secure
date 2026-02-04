@@ -28,17 +28,53 @@ jobs:
       - name: Escribir .env desde secretos/variables
         run: |
           cat > .env <<'EOF'
-          VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY || 'placeholder_key' }}
-          VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN || 'placeholder_auth_domain' }}
-          VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID || 'placeholder_project' }}
-          VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET || 'placeholder_bucket' }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID || '000000000000' }}
-          VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID || 'placeholder_app_id' }}
-          VITE_FIREBASE_MEASUREMENT_ID=${{ secrets.VITE_FIREBASE_MEASUREMENT_ID || 'G-XXXXXXX' }}
-          VITE_ENABLE_UPLOADS=${{ vars.VITE_ENABLE_UPLOADS || 'false' }}
-          VITE_USE_EMULATORS=${{ vars.VITE_USE_EMULATORS || 'false' }}
-          VITE_BASE_PATH=${{ vars.VITE_BASE_PATH || '/' }}
+          VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID=${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
+          VITE_ENABLE_UPLOADS=${{ vars.VITE_ENABLE_UPLOADS }}
+          VITE_USE_EMULATORS=${{ vars.VITE_USE_EMULATORS }}
+          VITE_BASE_PATH=${{ vars.VITE_BASE_PATH }}
           EOF
+
+      - name: Preflight - validar secretos Firebase
+        shell: bash
+        run: |
+          set -euo pipefail
+          required_keys=(
+            VITE_FIREBASE_API_KEY
+            VITE_FIREBASE_AUTH_DOMAIN
+            VITE_FIREBASE_PROJECT_ID
+            VITE_FIREBASE_STORAGE_BUCKET
+            VITE_FIREBASE_MESSAGING_SENDER_ID
+            VITE_FIREBASE_APP_ID
+          )
+          missing=()
+          invalid=()
+          placeholder_re='(YOUR_|placeholder|XXXX|000000000000|example|demo)'
+          for key in "${required_keys[@]}"; do
+            value="$(grep -E "^${key}=" .env | sed -E "s/^${key}=//")"
+            if [ -z "${value}" ]; then
+              missing+=("${key}")
+              continue
+            fi
+            if echo "${value}" | grep -Eqi "${placeholder_re}"; then
+              invalid+=("${key}")
+            fi
+          done
+          if [ "${#missing[@]}" -gt 0 ] || [ "${#invalid[@]}" -gt 0 ]; then
+            echo "Preflight failed: secrets missing/invalid."
+            if [ "${#missing[@]}" -gt 0 ]; then
+              echo "Missing: ${missing[*]}"
+            fi
+            if [ "${#invalid[@]}" -gt 0 ]; then
+              echo "Invalid: ${invalid[*]}"
+            fi
+            exit 1
+          fi
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -61,7 +97,7 @@ jobs:
       - name: Build
         env:
           # Custom domain -> serve from root. Override via repo variable VITE_BASE_PATH if needed.
-          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
+          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
         run: npm run build
 
       - name: Setup Pages
